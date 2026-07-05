@@ -1,0 +1,18 @@
+# Docker test environment
+config/
+*.pem
+
+*__pycache__*
+.pytest_cache/
+*.egg-info/
+.venv/
+venv/
+
+# Frontend
+node_modules/
+dist/
+*.tsbuildinfo
+bun.lock
+
+# AI context (local only, not part of the public repo)
+CLAUDE.md

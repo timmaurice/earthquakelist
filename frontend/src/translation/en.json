@@ -1,0 +1,24 @@
+{
+  "editor": {
+    "groups": {
+      "display": "Display"
+    },
+    "title": "Title (Optional)",
+    "places": "Places",
+    "show_map": "Show map",
+    "show_list": "Show recent earthquakes list",
+    "max_list_items": "Max. list items"
+  },
+  "card": {
+    "tsunami_alert": "Tsunami alert",
+    "distance": "Distance",
+    "depth": "Depth",
+    "recent_earthquakes": "Recent Earthquakes",
+    "no_data": "No earthquake data yet"
+  },
+  "common": {
+    "errors": {
+      "no_places": "You need to define at least one place."
+    }
+  }
+}

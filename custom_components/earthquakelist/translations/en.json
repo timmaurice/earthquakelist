@@ -1,0 +1,49 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Search Location",
+        "description": "Search for a place, region or country to monitor for earthquakes.",
+        "data": {
+          "query": "Search query"
+        }
+      },
+      "select": {
+        "title": "Select Location",
+        "description": "Select the location to monitor and set the earthquake filter criteria.",
+        "data": {
+          "place": "Location",
+          "min_magnitude": "Minimum magnitude",
+          "max_distance": "Maximum distance (km)"
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "Failed to connect to earthquakelist.org. Please check your internet connection.",
+      "no_results": "No matching locations found. Try a different search term.",
+      "invalid_place": "Please select a location from the list."
+    },
+    "abort": {
+      "already_configured": "This location is already configured."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Earthquake Filter",
+        "description": "Adjust the magnitude and distance filter used to determine the latest earthquake.",
+        "data": {
+          "min_magnitude": "Minimum magnitude",
+          "max_distance": "Maximum distance (km)"
+        }
+      }
+    }
+  },
+  "entity": {
+    "sensor": {
+      "latest_earthquake": {
+        "name": "Latest Earthquake"
+      }
+    }
+  }
+}

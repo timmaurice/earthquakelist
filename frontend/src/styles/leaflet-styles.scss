@@ -1,0 +1,86 @@
+@keyframes pulse {
+  0% {
+    box-shadow: 0 0 0 0 color-mix(in srgb, var(--eq-marker-color, var(--warning-color, #ffc107)) 70%, transparent);
+    transform: scale(1);
+  }
+
+  70% {
+    box-shadow: 0 0 10px 20px color-mix(in srgb, var(--eq-marker-color, var(--warning-color, #ffc107)) 0%, transparent);
+    transform: scale(1.5);
+  }
+
+  to {
+    box-shadow: 0 0 0 0 color-mix(in srgb, var(--eq-marker-color, var(--warning-color, #ffc107)) 0%, transparent);
+    transform: scale(1);
+  }
+}
+
+.leaflet-map {
+  border: 1px solid var(--divider-color, #e0e0e0);
+  border-radius: var(--ha-card-border-radius, 4px);
+  height: var(--earthquakelist-map-height, 220px);
+  overflow: hidden;
+  z-index: 0; // Fix for map appearing on top of other elements like header
+
+  &.interaction-disabled {
+    cursor: default;
+    pointer-events: none;
+  }
+}
+
+.leaflet-eq-marker {
+  align-items: center;
+  border: 2px solid white;
+  border-radius: 50%;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.4);
+  display: flex;
+  justify-content: center;
+  color: white;
+  font-weight: 700;
+  font-size: 10px;
+
+  &.minor {
+    background-color: var(--success-color, #4caf50);
+  }
+
+  &.light {
+    background-color: var(--warning-color, #ffc107);
+    color: var(--text-primary-color-dark, black);
+  }
+
+  &.moderate {
+    background-color: var(--eq-orange, #ff7f27);
+  }
+
+  &.strong {
+    background-color: var(--error-color, #db4437);
+  }
+}
+
+.leaflet-eq-marker-wrapper.latest .leaflet-eq-marker {
+  animation: pulse 1.8s ease-out infinite;
+}
+
+.leaflet-control a.recenter-button.active {
+  background-color: var(--primary-color);
+  color: white;
+}
+
+@container (width < 250px) {
+  .leaflet-map {
+    aspect-ratio: 4 / 3;
+    height: auto;
+
+    .leaflet-bar a,
+    .leaflet-bar a:hover {
+      height: 20px;
+      line-height: 20px;
+      width: 20px;
+    }
+
+    .leaflet-control-zoom-in,
+    .leaflet-control-zoom-out {
+      font-size: 16px;
+    }
+  }
+}
