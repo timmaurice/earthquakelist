@@ -97,9 +97,15 @@ places:
 | `show_list`      | `boolean`  | `true`  | Show the recent-earthquakes list below the map.              |
 | `max_list_items` | `number`   | `5`     | Max. number of entries shown in the recent earthquakes list. |
 
+## Notifications
+
+An [automation blueprint](blueprints/automation/timmaurice/earthquake_notify.yaml) is included to notify you whenever a monitored location reports a new earthquake, without writing any YAML. It triggers on a genuinely new match (not just a re-poll with the same result) and optionally lets you require a higher minimum magnitude or restrict to tsunami/impact alerts only.
+
+<a href="https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https%3A%2F%2Fgithub.com%2Ftimmaurice%2Fearthquakelist%2Fblob%2Fmain%2Fblueprints%2Fautomation%2Ftimmaurice%2Fearthquake_notify.yaml" target="_blank" rel="noreferrer noopener"><img src="https://my.home-assistant.io/badges/blueprint_import.svg" alt="Open your Home Assistant instance and show the blueprint import dialog with a specific blueprint pre-filled." /></a>
+
 ## Data Source
 
-All data is provided by the public API behind [earthquakelist.org](https://earthquakelist.org). This integration is not affiliated with earthquakelist.org.
+All data is provided by the public API behind [earthquakelist.org](https://earthquakelist.org). This integration is not affiliated with earthquakelist.org. Each configured location polls independently every 15 minutes.
 
 ## Development
 
