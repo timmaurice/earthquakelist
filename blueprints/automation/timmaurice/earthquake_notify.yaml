@@ -1,0 +1,81 @@
+blueprint:
+  name: Earthquake List - Notify on New Earthquake
+  description: >-
+    Sends a notification whenever a new matching earthquake is reported by an
+    Earthquake List sensor. Triggers on the sensor's `time` attribute rather
+    than its state, so it still fires when consecutive earthquakes share the
+    same magnitude. Optionally require a higher minimum magnitude than the
+    sensor itself is configured for, or restrict to tsunami/impact alerts only.
+  domain: automation
+  source_url: https://github.com/timmaurice/earthquakelist/blob/main/blueprints/automation/timmaurice/earthquake_notify.yaml
+  input:
+    earthquake_sensor:
+      name: Earthquake Sensor
+      description: The Earthquake List "Latest Earthquake" sensor to watch.
+      selector:
+        entity:
+          filter:
+            integration: earthquakelist
+            domain: sensor
+    min_magnitude:
+      name: Minimum Magnitude
+      description: >-
+        Only notify for earthquakes at or above this magnitude. Leave at 0 to
+        notify for every new match (the sensor's own configured filter still
+        applies).
+      default: 0
+      selector:
+        number:
+          min: 0
+          max: 10
+          step: 0.1
+          mode: box
+    tsunami_only:
+      name: Tsunami/Alert Only
+      description: Only notify when the earthquake carries a tsunami or impact alert flag.
+      default: false
+      selector:
+        boolean:
+    notify_action:
+      name: Notification Action
+      description: >-
+        The action(s) to run to send the notification. Use the `title` and
+        `message` variables provided by this blueprint in your notify action's
+        data, e.g. `title: "{{ title }}"` / `message: "{{ message }}"`.
+      selector:
+        action:
+
+mode: queued
+max_exceeded: silent
+
+variables:
+  min_magnitude: !input min_magnitude
+  tsunami_only: !input tsunami_only
+  place: '{{ trigger.to_state.attributes.place or trigger.to_state.attributes.location or trigger.to_state.name if trigger is defined else none }}'
+  magnitude: '{{ trigger.to_state.state if trigger is defined else none }}'
+  distance: '{{ trigger.to_state.attributes.distance_km if trigger is defined else none }}'
+  direction: '{{ trigger.to_state.attributes.direction if trigger is defined else none }}'
+  is_tsunami: >-
+    {{ trigger is defined and (trigger.to_state.attributes.alert_tsunami
+    or trigger.to_state.attributes.alert_level not in [none, false]) }}
+  title: "{{ 'Tsunami Alert' if is_tsunami else 'New Earthquake' }} - M{{ magnitude }} near {{ place }}"
+  message: >-
+    {{ 'Magnitude ' ~ magnitude ~ ' earthquake near ' ~ place
+    ~ (' (' ~ distance | round(0) | int ~ ' km ' ~ direction ~ ')' if distance is not none else '') ~ '.' }}
+
+trigger:
+  - trigger: state
+    entity_id: !input earthquake_sensor
+    attribute: time
+
+condition:
+  - condition: template
+    value_template: '{{ trigger.to_state.attributes.time != trigger.from_state.attributes.time }}'
+  - condition: template
+    value_template: '{{ trigger.to_state.state | float(0) >= min_magnitude }}'
+  - condition: template
+    value_template: >-
+      {{ not tsunami_only or trigger.to_state.attributes.alert_tsunami
+      or trigger.to_state.attributes.alert_level not in [none, false] }}
+
+action: !input notify_action
