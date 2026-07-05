@@ -1,0 +1,24 @@
+{
+  "editor": {
+    "groups": {
+      "display": "Anzeige"
+    },
+    "title": "Titel (optional)",
+    "places": "Orte",
+    "show_map": "Karte anzeigen",
+    "show_list": "Liste der letzten Erdbeben anzeigen",
+    "max_list_items": "Max. Listeneinträge"
+  },
+  "card": {
+    "tsunami_alert": "Tsunami-Warnung",
+    "distance": "Entfernung",
+    "depth": "Tiefe",
+    "recent_earthquakes": "Letzte Erdbeben",
+    "no_data": "Noch keine Erdbebendaten"
+  },
+  "common": {
+    "errors": {
+      "no_places": "Du musst mindestens einen Ort festlegen."
+    }
+  }
+}

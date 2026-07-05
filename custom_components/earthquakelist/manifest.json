@@ -1,0 +1,12 @@
+{
+  "domain": "earthquakelist",
+  "name": "Earthquake List",
+  "codeowners": ["@timmaurice"],
+  "config_flow": true,
+  "dependencies": ["http"],
+  "documentation": "https://github.com/timmaurice/earthquakelist",
+  "iot_class": "cloud_polling",
+  "issue_tracker": "https://github.com/timmaurice/earthquakelist/issues",
+  "requirements": [],
+  "version": "1.0.0"
+}

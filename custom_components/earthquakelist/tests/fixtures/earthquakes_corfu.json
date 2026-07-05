@@ -1,0 +1,38 @@
+{
+  "success": true,
+  "data": [
+    {
+      "eq": {
+        "id": "1294817",
+        "time": "1781239328",
+        "location_depth": "10",
+        "location_offshore": "1",
+        "location_text": "11 km SE of Himar\u00eb, Albania",
+        "location_nearest_timezone": "Europe/Tirane",
+        "metric_magnitude": "4.0",
+        "metric_felt": "0",
+        "metric_mmi": "0",
+        "metric_sig": "246",
+        "alert_level": false,
+        "alert_tsunami": "0",
+        "usgs_code": "us7000sseh",
+        "location_lat": "40.022",
+        "location_lng": "19.8391",
+        "news_link": false,
+        "news_title": false,
+        "time_utc": "Jun 12, 2026 04:42",
+        "time_nearest_timezone": "Jun 12, 2026 07:42",
+        "time_nearest_timezone_12hr": "Jun 12, 2026 07:42AM",
+        "local_timezone": "Europe/Athens",
+        "local_timezone_short": "Athens"
+      },
+      "dist": "45",
+      "dir": "N",
+      "place": {
+        "place": "Corfu",
+        "url": "greece/ionian-islands/corfu/",
+        "place_id": "2042"
+      }
+    }
+  ]
+}

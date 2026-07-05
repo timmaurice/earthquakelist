@@ -1,0 +1,15 @@
+name: earthquakelist-test
+services:
+  homeassistant:
+    container_name: ha-earthquakelist-test
+    image: homeassistant/home-assistant:stable
+    volumes:
+      - ./config:/config
+      # Mount the custom component directly into the container
+      - ./custom_components/earthquakelist:/config/custom_components/earthquakelist
+      - /etc/localtime:/etc/localtime:ro
+      - /run/dbus:/run/dbus:ro
+    restart: unless-stopped
+    privileged: true
+    ports:
+      - '8136:8123'

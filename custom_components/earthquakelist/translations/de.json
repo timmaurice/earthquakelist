@@ -1,0 +1,49 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Ort suchen",
+        "description": "Suche nach einem Ort, einer Region oder einem Land, das auf Erdbeben überwacht werden soll.",
+        "data": {
+          "query": "Suchbegriff"
+        }
+      },
+      "select": {
+        "title": "Ort auswählen",
+        "description": "Wähle den zu überwachenden Ort und lege die Filterkriterien für Erdbeben fest.",
+        "data": {
+          "place": "Ort",
+          "min_magnitude": "Mindestmagnitude",
+          "max_distance": "Maximale Entfernung (km)"
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "Verbindung zu earthquakelist.org fehlgeschlagen. Bitte Internetverbindung prüfen.",
+      "no_results": "Keine passenden Orte gefunden. Bitte einen anderen Suchbegriff versuchen.",
+      "invalid_place": "Bitte einen Ort aus der Liste auswählen."
+    },
+    "abort": {
+      "already_configured": "Dieser Ort ist bereits konfiguriert."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Erdbeben-Filter",
+        "description": "Passe den Magnituden- und Entfernungsfilter an, mit dem das letzte Erdbeben ermittelt wird.",
+        "data": {
+          "min_magnitude": "Mindestmagnitude",
+          "max_distance": "Maximale Entfernung (km)"
+        }
+      }
+    }
+  },
+  "entity": {
+    "sensor": {
+      "latest_earthquake": {
+        "name": "Letztes Erdbeben"
+      }
+    }
+  }
+}
