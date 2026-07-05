@@ -15,6 +15,9 @@
           "place": "Ort",
           "min_magnitude": "Mindestmagnitude",
           "max_distance": "Maximale Entfernung (km)"
+        },
+        "data_description": {
+          "max_distance": "Bei einer Region oder einem Land wird die Entfernung ab einem einzelnen Referenzpunkt darin gemessen, nicht ab der gesamten Fläche – bei zu wenigen Treffern einen deutlich höheren Wert verwenden."
         }
       }
     },
@@ -35,6 +38,9 @@
         "data": {
           "min_magnitude": "Mindestmagnitude",
           "max_distance": "Maximale Entfernung (km)"
+        },
+        "data_description": {
+          "max_distance": "Bei einer Region oder einem Land wird die Entfernung ab einem einzelnen Referenzpunkt darin gemessen, nicht ab der gesamten Fläche – bei zu wenigen Treffern einen deutlich höheren Wert verwenden."
         }
       }
     }

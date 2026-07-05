@@ -16,3 +16,4 @@ bun.lock
 
 # AI context (local only, not part of the public repo)
 CLAUDE.md
+.claude/

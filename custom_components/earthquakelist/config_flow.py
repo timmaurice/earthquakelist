@@ -35,7 +35,11 @@ MIN_MAGNITUDE_SELECTOR = selector.NumberSelector(
 MAX_DISTANCE_SELECTOR = selector.NumberSelector(
     selector.NumberSelectorConfig(
         min=1,
-        max=1000,
+        # Distance is measured from a single reference point within the
+        # monitored place/region/country, not from its edges — a large country
+        # can need a distance far beyond a "place" filter's typical range to
+        # still match earthquakes near its far side.
+        max=20000,
         step=1,
         mode=selector.NumberSelectorMode.BOX,
         unit_of_measurement="km",

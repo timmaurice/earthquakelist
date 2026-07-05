@@ -139,7 +139,7 @@ export class EarthquakeListCard extends LitElement implements LovelaceCard {
         ${
           showAlert
             ? html`<div class="alert-badge">
-                <ha-icon icon="mdi:wave"></ha-icon>${localize(this.hass, 'card.tsunami_alert')}
+                <ha-icon icon="mdi:tsunami"></ha-icon>${localize(this.hass, 'card.tsunami_alert')}
               </div>`
             : nothing
         }
@@ -155,7 +155,7 @@ export class EarthquakeListCard extends LitElement implements LovelaceCard {
             ? html`
                 <div class="quake-list">
                   <div class="quake-list-title">${localize(this.hass, 'card.recent_earthquakes')}</div>
-                  ${earthquakes.slice(0, maxItems).map((eq) => this._renderQuakeItem(eq))}
+                  ${earthquakes.slice(1, 1 + maxItems).map((eq) => this._renderQuakeItem(eq))}
                 </div>
               `
             : nothing
@@ -173,10 +173,22 @@ export class EarthquakeListCard extends LitElement implements LovelaceCard {
           ${eq.magnitude !== undefined ? eq.magnitude.toFixed(1) : '?'}
         </div>
         <div class="quake-item-info">
-          <span class="quake-item-place">${eq.place ?? eq.location ?? '—'}</span>
-          <span class="quake-item-meta"
-            >${eq.distance_km !== undefined ? `${Math.round(eq.distance_km)} km ${eq.direction ?? ''}` : ''}</span
-          >
+          <span class="quake-item-place">
+            ${eq.place ?? eq.location ?? '—'}
+            ${
+              eq.alert_tsunami || eq.alert_level
+                ? html`<ha-icon
+                    class="quake-item-tsunami"
+                    icon="mdi:tsunami"
+                    title=${localize(this.hass, 'card.tsunami_alert')}
+                  ></ha-icon>`
+                : nothing
+            }
+          </span>
+          <span class="quake-item-meta">
+            ${eq.distance_km !== undefined ? `${Math.round(eq.distance_km)} km ${eq.direction ?? ''}` : ''}
+            ${eq.depth_km !== undefined ? ` · ${localize(this.hass, 'card.depth')}: ${Math.round(eq.depth_km)} km` : ''}
+          </span>
         </div>
         <div class="quake-item-time">${timeAgo}</div>
       </div>

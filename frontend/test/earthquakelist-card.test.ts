@@ -100,6 +100,66 @@ describe('EarthquakeListCard', () => {
     expect(card.shadowRoot?.querySelector('.alert-badge')).not.toBeNull();
   });
 
+  it('marks only the affected recent-earthquakes list items with a tsunami icon', async () => {
+    const entityId = 'sensor.earthquakelist_japan_latest_earthquake';
+    const earthquakes = [
+      { magnitude: 6.1, place: 'Naha', time: '2026-07-04T00:00:00+00:00', alert_tsunami: true },
+      // alert_level alone (e.g. USGS PAGER color) also warrants the icon, even without alert_tsunami
+      { magnitude: 5.7, place: 'Kōfu', time: '2026-07-03T00:00:00+00:00', alert_tsunami: false, alert_level: 'green' },
+      { magnitude: 5.1, place: 'Sendai', time: '2026-07-02T00:00:00+00:00', alert_tsunami: false },
+      { magnitude: 4.9, place: 'Tokyo', time: '2026-07-01T00:00:00+00:00', alert_tsunami: true },
+    ];
+    const card = new EarthquakeListCard();
+    card.hass = makeHass({
+      states: {
+        [entityId]: {
+          entity_id: entityId,
+          state: '6.1',
+          last_changed: '',
+          last_updated: '',
+          attributes: { monitored_place: 'Japan', earthquakes },
+        },
+      },
+    });
+    card.setConfig({ type: 'custom:earthquakelist-card', places: [entityId], show_map: false });
+    document.body.appendChild(card);
+    await card.updateComplete;
+
+    // earthquakes[0] (Naha) is the summary entry above the list, not a list item
+    const items = card.shadowRoot?.querySelectorAll('.quake-item') ?? [];
+    expect(items).toHaveLength(3);
+    expect(items[0].querySelector('.quake-item-tsunami')).not.toBeNull();
+    expect(items[1].querySelector('.quake-item-tsunami')).toBeNull();
+    expect(items[2].querySelector('.quake-item-tsunami')).not.toBeNull();
+  });
+
+  it('does not repeat the summary earthquake as the first recent-earthquakes list item', async () => {
+    const entityId = 'sensor.earthquakelist_japan_latest_earthquake';
+    const earthquakes = [
+      { magnitude: 6.1, place: 'Naha', time: '2026-07-02T00:00:00+00:00' },
+      { magnitude: 5.1, place: 'Sendai', time: '2026-07-01T00:00:00+00:00' },
+    ];
+    const card = new EarthquakeListCard();
+    card.hass = makeHass({
+      states: {
+        [entityId]: {
+          entity_id: entityId,
+          state: '6.1',
+          last_changed: '',
+          last_updated: '',
+          attributes: { monitored_place: 'Japan', earthquakes },
+        },
+      },
+    });
+    card.setConfig({ type: 'custom:earthquakelist-card', places: [entityId], show_map: false });
+    document.body.appendChild(card);
+    await card.updateComplete;
+
+    const items = card.shadowRoot?.querySelectorAll('.quake-item') ?? [];
+    expect(items).toHaveLength(1);
+    expect(items[0].querySelector('.quake-item-place')?.textContent).toContain('Sendai');
+  });
+
   it('shows an empty state for an unavailable entity', async () => {
     const entityId = 'sensor.earthquakelist_missing';
     const card = new EarthquakeListCard();

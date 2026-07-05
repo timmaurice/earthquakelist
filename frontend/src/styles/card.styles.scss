@@ -110,7 +110,7 @@
   color: var(--error-color, #db4437);
 
   ha-icon {
-    --mdc-icon-size: 16px;
+    --mdc-icon-size: 20px;
   }
 }
 
@@ -180,10 +180,19 @@
 }
 
 .quake-item-place {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
   color: var(--primary-text-color);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.quake-item-tsunami {
+  flex: 0 0 auto;
+  color: var(--error-color, #db4437);
+  --mdc-icon-size: 15px;
 }
 
 .quake-item-meta {

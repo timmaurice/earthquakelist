@@ -15,6 +15,9 @@
           "place": "Location",
           "min_magnitude": "Minimum magnitude",
           "max_distance": "Maximum distance (km)"
+        },
+        "data_description": {
+          "max_distance": "For a region or country, distance is measured from a single reference point inside it, not the whole area — use a much larger value if you monitor a large region/country and see too few matches."
         }
       }
     },
@@ -35,6 +38,9 @@
         "data": {
           "min_magnitude": "Minimum magnitude",
           "max_distance": "Maximum distance (km)"
+        },
+        "data_description": {
+          "max_distance": "For a region or country, distance is measured from a single reference point inside it, not the whole area — use a much larger value if you monitor a large region/country and see too few matches."
         }
       }
     }
