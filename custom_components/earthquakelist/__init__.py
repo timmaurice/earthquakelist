@@ -8,6 +8,7 @@ from datetime import timedelta
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import Platform
 from homeassistant.core import HomeAssistant
+import homeassistant.helpers.config_validation as cv
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 
 from .api import EarthquakeListAPI, EarthquakeListApiError
@@ -24,6 +25,8 @@ from .const import (
 PLATFORMS = [Platform.SENSOR]
 SCAN_INTERVAL = timedelta(minutes=15)
 _LOGGER = logging.getLogger(__name__)
+
+CONFIG_SCHEMA = cv.config_entry_only_config_schema(DOMAIN)
 
 CARD_FILENAME = "earthquakelist-card.js"
 CARD_URL_BASE = "/earthquakelist_frontend"
