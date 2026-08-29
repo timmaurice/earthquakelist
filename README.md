@@ -9,7 +9,7 @@
 
 This custom integration for Home Assistant fetches earthquake data directly from [earthquakelist.org](https://earthquakelist.org). **It comes bundled with a Lovelace card** to visualize it — no separate frontend install needed.
 
-<img src="https://raw.githubusercontent.com/timmaurice/earthquakelist/main/image.png" alt="Earthquake List Lovelace card showing a magnitude badge, map, and recent-earthquakes list for Japan" width="420">
+<img src="https://raw.githubusercontent.com/timmaurice/earthquakelist/main/image.png" alt="Earthquake List Lovelace card monitoring Taiwan: a magnitude badge for a M6.6 near Yilan with distance, depth, offshore and felt-report details, a tsunami-possible badge and a news link, a map whose open marker popup repeats those details, and a list of previous earthquakes marked with impact-level and tsunami icons" width="420">
 
 ## Features
 
