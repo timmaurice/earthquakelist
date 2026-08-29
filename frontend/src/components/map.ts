@@ -62,6 +62,7 @@ export class EarthquakeListMap extends LitElement {
   private _recenterButton: HTMLAnchorElement | undefined;
   private _programmaticMapChange = false;
   private _programmaticChangeSettleTimer: number | undefined;
+  private _hasAutoZoomedOnce = false;
 
   connectedCallback(): void {
     super.connectedCallback();
@@ -221,10 +222,15 @@ export class EarthquakeListMap extends LitElement {
       const severity = magnitudeSeverity(eq.magnitude);
       const size = 18 + Math.round((eq.magnitude ?? 3) * 2);
       const isLatest = index === 0;
+      // MapLibre marker elements stack by DOM insertion order when no z-index is set — since
+      // the latest quake is inserted first (index 0), older quakes added afterward would
+      // otherwise paint over its pulsing halo. Rank newer quakes above older ones instead.
+      const zIndex = this.earthquakes.length - index + (isLatest ? 1000 : 0);
 
       if (!this._quakeMarkers.has(key)) {
         const wrapper = document.createElement('div');
         wrapper.className = `eq-marker-wrapper${isLatest ? ' latest' : ''}`;
+        wrapper.style.zIndex = String(zIndex);
         wrapper.innerHTML = `<div class="eq-marker ${severity}" style="width:${size}px;height:${size}px;">${
           eq.magnitude !== undefined ? eq.magnitude.toFixed(1) : ''
         }</div>`;
@@ -260,9 +266,15 @@ export class EarthquakeListMap extends LitElement {
     const southWest = bounds.getSouthWest();
     const isRealBounds = northEast.lng !== southWest.lng || northEast.lat !== southWest.lat;
 
+    // The very first fit snaps straight to the target view instead of flying there —
+    // otherwise every card load briefly shows the whole world (the map starts at
+    // center [0,0]/zoom 0) before animating in.
+    const animate = this._hasAutoZoomedOnce;
+    this._hasAutoZoomedOnce = true;
+
     this._beginProgrammaticMapChange();
     if (isRealBounds) {
-      this._map.fitBounds(bounds, { padding: 30, maxZoom: 12 });
+      this._map.fitBounds(bounds, { padding: 30, maxZoom: 12, animate });
     } else {
       this._map.jumpTo({ center: northEast, zoom: Math.max(this._map.getZoom(), 8) });
     }
@@ -300,6 +312,7 @@ export class EarthquakeListMap extends LitElement {
       this._quakeMarkers.clear();
       this._recenterButton = undefined;
       this._userInteractedWithMap = false;
+      this._hasAutoZoomedOnce = false;
     }
   }
 
