@@ -1,0 +1,34 @@
+{
+  "editor": {
+    "groups": {
+      "display": "显示"
+    },
+    "title": "标题（可选）",
+    "places": "地点",
+    "show_map": "显示地图",
+    "show_list": "显示之前的地震列表",
+    "max_list_items": "最大列表项数"
+  },
+  "card": {
+    "tsunami_alert": "海啸预警",
+    "distance": "距离",
+    "depth": "深度",
+    "no_data": "暂无地震数据",
+    "offshore": "海域",
+    "felt_reports": "{count} 人有感",
+    "read_more": "了解更多",
+    "local_time": "{time}（{zone} 当地时间）",
+    "show_details": "显示地震详情",
+    "recenter_map": "重新居中地图并启用自动缩放",
+    "autozoom_enabled": "自动缩放已启用",
+    "previous_earthquakes": "之前的地震",
+    "alert_yellow": "黄色预警",
+    "alert_orange": "橙色预警",
+    "alert_red": "红色预警"
+  },
+  "common": {
+    "errors": {
+      "no_places": "您需要至少定义一个地点。"
+    }
+  }
+}

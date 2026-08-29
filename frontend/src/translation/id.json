@@ -1,0 +1,34 @@
+{
+  "editor": {
+    "groups": {
+      "display": "Tampilan"
+    },
+    "title": "Judul (Opsional)",
+    "places": "Lokasi",
+    "show_map": "Tampilkan peta",
+    "show_list": "Tampilkan daftar gempa bumi sebelumnya",
+    "max_list_items": "Maks. item daftar"
+  },
+  "card": {
+    "tsunami_alert": "Peringatan tsunami",
+    "distance": "Jarak",
+    "depth": "Kedalaman",
+    "no_data": "Belum ada data gempa bumi",
+    "offshore": "Lepas pantai",
+    "felt_reports": "Dirasakan oleh {count}",
+    "read_more": "Selengkapnya",
+    "local_time": "{time} (waktu {zone})",
+    "show_details": "Tampilkan detail gempa bumi",
+    "recenter_map": "Pusatkan ulang peta dan aktifkan zoom otomatis",
+    "autozoom_enabled": "Zoom otomatis aktif",
+    "previous_earthquakes": "Gempa Bumi Sebelumnya",
+    "alert_yellow": "Peringatan kuning",
+    "alert_orange": "Peringatan oranye",
+    "alert_red": "Peringatan merah"
+  },
+  "common": {
+    "errors": {
+      "no_places": "Anda harus menentukan setidaknya satu lokasi."
+    }
+  }
+}

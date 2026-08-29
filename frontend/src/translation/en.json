@@ -6,15 +6,25 @@
     "title": "Title (Optional)",
     "places": "Places",
     "show_map": "Show map",
-    "show_list": "Show recent earthquakes list",
+    "show_list": "Show previous earthquakes list",
     "max_list_items": "Max. list items"
   },
   "card": {
     "tsunami_alert": "Tsunami alert",
     "distance": "Distance",
     "depth": "Depth",
-    "recent_earthquakes": "Recent Earthquakes",
-    "no_data": "No earthquake data yet"
+    "no_data": "No earthquake data yet",
+    "offshore": "Offshore",
+    "felt_reports": "Felt by {count}",
+    "read_more": "Read more",
+    "local_time": "{time} ({zone} time)",
+    "show_details": "Show earthquake details",
+    "recenter_map": "Recenter map and enable auto-zoom",
+    "autozoom_enabled": "Auto-zoom enabled",
+    "previous_earthquakes": "Previous Earthquakes",
+    "alert_yellow": "Yellow alert",
+    "alert_orange": "Orange alert",
+    "alert_red": "Red alert"
   },
   "common": {
     "errors": {
