@@ -21,10 +21,11 @@ const PLACES_SCHEMA: HaFormSchema[] = [
   { name: 'places', selector: { entity: { multiple: true, filter: { integration: 'earthquakelist' } } } },
 ];
 
-function displaySchema(showList: boolean): HaFormSchema[] {
+function displaySchema(showMap: boolean, showList: boolean): HaFormSchema[] {
   return [
     { name: 'title', selector: { text: {} } },
     { name: 'show_map', selector: { boolean: {} } },
+    ...(showMap ? [{ name: 'max_map_markers', selector: { number: { min: 1, max: 10, step: 1, mode: 'box' } } }] : []),
     { name: 'show_list', selector: { boolean: {} } },
     ...(showList ? [{ name: 'max_list_items', selector: { number: { min: 1, max: 20, step: 1, mode: 'box' } } }] : []),
   ];
@@ -63,7 +64,7 @@ export class EarthquakeListCardEditor extends LitElement implements LovelaceCard
             <ha-form
               .hass=${this.hass}
               .data=${this._config}
-              .schema=${displaySchema(this._config.show_list !== false)}
+              .schema=${displaySchema(this._config.show_map !== false, this._config.show_list !== false)}
               .computeLabel=${this._computeLabel}
               @value-changed=${this._valueChanged}
             ></ha-form>

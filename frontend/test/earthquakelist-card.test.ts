@@ -253,6 +253,72 @@ describe('EarthquakeListCard', () => {
     expect(heading).toBe('Previous Earthquakes');
   });
 
+  it('passes every earthquake to the map by default, independent of max_list_items', async () => {
+    const entityId = 'sensor.earthquakelist_japan_latest_earthquake';
+    const earthquakes = Array.from({ length: 10 }, (_, i) => ({
+      magnitude: 5 + i * 0.1,
+      place: `Place ${i}`,
+      time: '2026-07-02T00:00:00+00:00',
+      latitude: 35 + i,
+      longitude: 139 + i,
+    }));
+    const card = new EarthquakeListCard();
+    card.hass = makeHass({
+      states: {
+        [entityId]: {
+          entity_id: entityId,
+          state: '5.0',
+          last_changed: '',
+          last_updated: '',
+          attributes: { monitored_place: 'Japan', earthquakes },
+        },
+      },
+    });
+    card.setConfig({ type: 'custom:earthquakelist-card', places: [entityId], max_list_items: 3 });
+    document.body.appendChild(card);
+    await card.updateComplete;
+
+    const map = card.shadowRoot?.querySelector('earthquakelist-map') as unknown as {
+      earthquakes: unknown[];
+    };
+    // The map deliberately shows more than the list: it has room for surrounding context.
+    expect(map.earthquakes).toHaveLength(10);
+    expect(card.shadowRoot?.querySelectorAll('.quake-item')).toHaveLength(3);
+  });
+
+  it('caps map markers at max_map_markers when set', async () => {
+    const entityId = 'sensor.earthquakelist_japan_latest_earthquake';
+    const earthquakes = Array.from({ length: 10 }, (_, i) => ({
+      magnitude: 5 + i * 0.1,
+      place: `Place ${i}`,
+      time: '2026-07-02T00:00:00+00:00',
+      latitude: 35 + i,
+      longitude: 139 + i,
+    }));
+    const card = new EarthquakeListCard();
+    card.hass = makeHass({
+      states: {
+        [entityId]: {
+          entity_id: entityId,
+          state: '5.0',
+          last_changed: '',
+          last_updated: '',
+          attributes: { monitored_place: 'Japan', earthquakes },
+        },
+      },
+    });
+    card.setConfig({ type: 'custom:earthquakelist-card', places: [entityId], max_map_markers: 4 });
+    document.body.appendChild(card);
+    await card.updateComplete;
+
+    const map = card.shadowRoot?.querySelector('earthquakelist-map') as unknown as {
+      earthquakes: { place?: string }[];
+    };
+    expect(map.earthquakes).toHaveLength(4);
+    // Keeps the most recent ones, not an arbitrary slice.
+    expect(map.earthquakes[0].place).toBe('Place 0');
+  });
+
   it('shows an empty state for an unavailable entity', async () => {
     const entityId = 'sensor.earthquakelist_missing';
     const card = new EarthquakeListCard();

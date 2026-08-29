@@ -7,7 +7,8 @@
     "places": "地域",
     "show_map": "地図を表示",
     "show_list": "以前の地震リストを表示",
-    "max_list_items": "リストの最大件数"
+    "max_list_items": "リストの最大件数",
+    "max_map_markers": "地図上の最大マーカー数"
   },
   "card": {
     "tsunami_alert": "津波の可能性",

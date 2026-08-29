@@ -10,6 +10,9 @@ interface ResolvedPlace {
   entityId: string;
 }
 
+// Matches DEFAULT_HISTORY_LIMIT in const.py — the most the sensor ever returns.
+const DEFAULT_MAX_MAP_MARKERS = 10;
+
 export class EarthquakeListCard extends LitElement implements LovelaceCard {
   @property({ attribute: false }) public hass!: HomeAssistant;
   @state() private _config!: EarthquakeListCardConfig;
@@ -31,6 +34,10 @@ export class EarthquakeListCard extends LitElement implements LovelaceCard {
       show_map: true,
       show_list: true,
       max_list_items: 5,
+      // Defaults to every earthquake the sensor provides, which is deliberately more than
+      // the list shows: the map has room for surrounding context. Set it lower (or to
+      // max_list_items + 1) to keep the two in step.
+      max_map_markers: DEFAULT_MAX_MAP_MARKERS,
       ...config,
     };
   }
@@ -170,7 +177,10 @@ export class EarthquakeListCard extends LitElement implements LovelaceCard {
         ${
           this._config.show_map
             ? html`<div class="map-wrapper">
-                <earthquakelist-map .hass=${this.hass} .earthquakes=${earthquakes}></earthquakelist-map>
+                <earthquakelist-map
+                  .hass=${this.hass}
+                  .earthquakes=${earthquakes.slice(0, this._config.max_map_markers ?? DEFAULT_MAX_MAP_MARKERS)}
+                ></earthquakelist-map>
               </div>`
             : nothing
         }

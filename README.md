@@ -15,10 +15,10 @@ This custom integration for Home Assistant fetches earthquake data directly from
 
 - **Global Coverage**: Monitor any place, region or country listed on earthquakelist.org.
 - **Configurable Filter**: Set a minimum magnitude and maximum distance to determine which earthquakes match.
-- **Detailed Attributes**: Location, time, depth, distance & direction from the monitored point, tsunami alert, felt reports, Mercalli intensity, significance, the USGS reference code, and up to 10 recent matching earthquakes.
+- **Detailed Attributes**: Location, time, depth, distance & direction from the monitored point, tsunami and USGS impact-level flags, whether the epicenter was offshore, felt reports, Mercalli intensity, significance, the USGS reference code, related news coverage, and up to 10 recent matching earthquakes.
 - **Device per Location**: Creates a dedicated device in Home Assistant for each monitored location.
-- **Bundled Lovelace Card**: Magnitude badge, tsunami alert badge, a MapLibre GL map with magnitude-colored markers, and a recent-earthquakes list — configurable per place via a GUI editor.
-- **Localization**: Supports English and German out of the box.
+- **Bundled Lovelace Card**: Magnitude badge, tsunami and USGS impact-level badges, a MapLibre GL map with magnitude-colored markers and detail popups, and a previous-earthquakes list — configurable per place via a GUI editor.
+- **Localization**: English, German, Spanish, Indonesian, Japanese and Chinese out of the box.
 
 ## Localization
 
@@ -84,7 +84,7 @@ For each configured location, a device with a single **Latest Earthquake** senso
 | `distance_km` / `direction`               | Distance and compass direction from the monitored point (e.g. `45`, `N`).                                                                                    |
 | `latitude` / `longitude`                  | Coordinates of the earthquake.                                                                                                                               |
 | `alert_level`                             | USGS PAGER _impact_ level (`green`/`yellow`/`orange`/`red`), if one was issued. Distinct from a tsunami alert; `green` means no significant impact expected. |
-| `alert_tsunami`                           | Whether a tsunami alert was issued.                                                                                                                          |
+| `alert_tsunami`                           | USGS flags this for large earthquakes in oceanic regions. Per USGS it does not indicate that a tsunami did or will occur, so the card labels it "possible".  |
 | `mmi`                                     | Modified Mercalli Intensity — reported shaking severity, if available.                                                                                       |
 | `felt`                                    | Number of "did you feel it?" reports.                                                                                                                        |
 | `significance`                            | USGS significance score (a rough combined measure of magnitude, impact, and recency).                                                                        |
@@ -111,13 +111,14 @@ places:
   - sensor.earthquakelist_japan_latest_earthquake
 ```
 
-| Option           | Type       | Default | Description                                                  |
-| ---------------- | ---------- | ------- | ------------------------------------------------------------ |
-| `places`         | `string[]` | —       | Required. One `sensor.earthquakelist_*` entity per place.    |
-| `title`          | `string`   | —       | Optional card title.                                         |
-| `show_map`       | `boolean`  | `true`  | Show the MapLibre GL map with magnitude-colored markers.     |
-| `show_list`      | `boolean`  | `true`  | Show the recent-earthquakes list below the map.              |
-| `max_list_items` | `number`   | `5`     | Max. number of entries shown in the recent earthquakes list. |
+| Option            | Type       | Default | Description                                                                                                                                                                                                                                     |
+| ----------------- | ---------- | ------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `places`          | `string[]` | —       | Required. One `sensor.earthquakelist_*` entity per place.                                                                                                                                                                                       |
+| `title`           | `string`   | —       | Optional card title.                                                                                                                                                                                                                            |
+| `show_map`        | `boolean`  | `true`  | Show the MapLibre GL map with magnitude-colored markers.                                                                                                                                                                                        |
+| `max_map_markers` | `number`   | `10`    | Max. number of markers on the map. Independent of `max_list_items`, so the map can show more context than the list — set it to `max_list_items` + 1 to keep the two in step (the list excludes the latest earthquake, which is shown above it). |
+| `show_list`       | `boolean`  | `true`  | Show the previous-earthquakes list below the map.                                                                                                                                                                                               |
+| `max_list_items`  | `number`   | `5`     | Max. number of entries shown in the previous earthquakes list.                                                                                                                                                                                  |
 
 ## Notifications
 

@@ -7,7 +7,8 @@
     "places": "Places",
     "show_map": "Show map",
     "show_list": "Show previous earthquakes list",
-    "max_list_items": "Max. list items"
+    "max_list_items": "Max. list items",
+    "max_map_markers": "Max. map markers"
   },
   "card": {
     "tsunami_alert": "Tsunami possible",
