@@ -26,6 +26,12 @@ Both the integration (config flow, entity names) and the Lovelace card are avail
 
 - English
 - German
+- Spanish (`es`, plus a Latin American variant `es-419`)
+- Indonesian
+- Japanese
+- Chinese (Simplified `zh-Hans`, and Traditional `zh-Hant` for Taiwan)
+
+The non-English translations beyond German were machine-generated — corrections from native speakers are very welcome.
 
 <details>
 <summary>Contributing Translations</summary>

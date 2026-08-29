@@ -1,0 +1,55 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "搜尋地點",
+        "description": "搜尋要監測地震的地點、地區或國家。",
+        "data": {
+          "query": "搜尋關鍵字"
+        }
+      },
+      "select": {
+        "title": "選擇地點",
+        "description": "選擇要監測的地點，並設定地震篩選條件。",
+        "data": {
+          "place": "地點",
+          "min_magnitude": "最小規模",
+          "max_distance": "最大距離（公里）"
+        },
+        "data_description": {
+          "max_distance": "對於地區或國家，距離是從其內部的單一參考點測量，而非整個區域 — 如果您監測的地區/國家較大且符合的結果太少，請設定大得多的數值。"
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "無法連線至 earthquakelist.org。請檢查您的網路連線。",
+      "no_results": "找不到符合的地點。請嘗試其他搜尋關鍵字。",
+      "invalid_place": "請從清單中選擇一個地點。"
+    },
+    "abort": {
+      "already_configured": "此地點已設定。"
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "地震篩選條件",
+        "description": "調整用於判斷最新地震的規模與距離篩選條件。",
+        "data": {
+          "min_magnitude": "最小規模",
+          "max_distance": "最大距離（公里）"
+        },
+        "data_description": {
+          "max_distance": "對於地區或國家，距離是從其內部的單一參考點測量，而非整個區域 — 如果您監測的地區/國家較大且符合的結果太少，請設定大得多的數值。"
+        }
+      }
+    }
+  },
+  "entity": {
+    "sensor": {
+      "latest_earthquake": {
+        "name": "最新地震"
+      }
+    }
+  }
+}

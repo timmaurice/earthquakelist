@@ -1,0 +1,55 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "搜索地点",
+        "description": "搜索要监测地震的地点、地区或国家。",
+        "data": {
+          "query": "搜索关键词"
+        }
+      },
+      "select": {
+        "title": "选择地点",
+        "description": "选择要监测的地点，并设置地震筛选条件。",
+        "data": {
+          "place": "地点",
+          "min_magnitude": "最小震级",
+          "max_distance": "最大距离（公里）"
+        },
+        "data_description": {
+          "max_distance": "对于地区或国家，距离是从其内部的单个参考点测量的，而不是整个区域 — 如果您监测的地区/国家较大且匹配结果太少，请设置大得多的数值。"
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "无法连接到 earthquakelist.org。请检查您的网络连接。",
+      "no_results": "未找到匹配的地点。请尝试其他搜索关键词。",
+      "invalid_place": "请从列表中选择一个地点。"
+    },
+    "abort": {
+      "already_configured": "该地点已配置。"
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "地震筛选条件",
+        "description": "调整用于确定最新地震的震级和距离筛选条件。",
+        "data": {
+          "min_magnitude": "最小震级",
+          "max_distance": "最大距离（公里）"
+        },
+        "data_description": {
+          "max_distance": "对于地区或国家，距离是从其内部的单个参考点测量的，而不是整个区域 — 如果您监测的地区/国家较大且匹配结果太少，请设置大得多的数值。"
+        }
+      }
+    }
+  },
+  "entity": {
+    "sensor": {
+      "latest_earthquake": {
+        "name": "最新地震"
+      }
+    }
+  }
+}

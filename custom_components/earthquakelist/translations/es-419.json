@@ -1,0 +1,55 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Buscar ubicación",
+        "description": "Busca un lugar, región o país para monitorear sismos.",
+        "data": {
+          "query": "Término de búsqueda"
+        }
+      },
+      "select": {
+        "title": "Seleccionar ubicación",
+        "description": "Selecciona la ubicación a monitorear y define los criterios de filtro de sismos.",
+        "data": {
+          "place": "Ubicación",
+          "min_magnitude": "Magnitud mínima",
+          "max_distance": "Distancia máxima (km)"
+        },
+        "data_description": {
+          "max_distance": "En una región o país, la distancia se mide desde un único punto de referencia dentro de ella, no desde toda el área: usa un valor mucho mayor si monitoreas una región o país grande y ves muy pocos resultados."
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "No se pudo conectar con earthquakelist.org. Revisa tu conexión a internet.",
+      "no_results": "No se encontraron ubicaciones coincidentes. Prueba con otro término de búsqueda.",
+      "invalid_place": "Selecciona una ubicación de la lista."
+    },
+    "abort": {
+      "already_configured": "Esta ubicación ya está configurada."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Filtro de sismos",
+        "description": "Ajusta el filtro de magnitud y distancia que se usa para determinar el último sismo.",
+        "data": {
+          "min_magnitude": "Magnitud mínima",
+          "max_distance": "Distancia máxima (km)"
+        },
+        "data_description": {
+          "max_distance": "En una región o país, la distancia se mide desde un único punto de referencia dentro de ella, no desde toda el área: usa un valor mucho mayor si monitoreas una región o país grande y ves muy pocos resultados."
+        }
+      }
+    }
+  },
+  "entity": {
+    "sensor": {
+      "latest_earthquake": {
+        "name": "Último sismo"
+      }
+    }
+  }
+}

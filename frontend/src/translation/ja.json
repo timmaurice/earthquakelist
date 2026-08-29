@@ -1,0 +1,34 @@
+{
+  "editor": {
+    "groups": {
+      "display": "表示"
+    },
+    "title": "タイトル（任意）",
+    "places": "地域",
+    "show_map": "地図を表示",
+    "show_list": "以前の地震リストを表示",
+    "max_list_items": "リストの最大件数"
+  },
+  "card": {
+    "tsunami_alert": "津波警報",
+    "distance": "距離",
+    "depth": "深さ",
+    "no_data": "地震データがまだありません",
+    "offshore": "海域",
+    "felt_reports": "{count} 人が体感",
+    "read_more": "詳細を見る",
+    "local_time": "{time}（{zone} 現地時間）",
+    "show_details": "地震の詳細を表示",
+    "recenter_map": "地図を再センタリングして自動ズームを有効にする",
+    "autozoom_enabled": "自動ズーム有効",
+    "previous_earthquakes": "以前の地震",
+    "alert_yellow": "警戒レベル 黄",
+    "alert_orange": "警戒レベル 橙",
+    "alert_red": "警戒レベル 赤"
+  },
+  "common": {
+    "errors": {
+      "no_places": "少なくとも1つの地域を指定してください。"
+    }
+  }
+}

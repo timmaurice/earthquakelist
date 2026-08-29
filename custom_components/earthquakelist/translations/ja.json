@@ -1,0 +1,55 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "地域を検索",
+        "description": "地震を監視する場所、地域、または国を検索します。",
+        "data": {
+          "query": "検索キーワード"
+        }
+      },
+      "select": {
+        "title": "地域を選択",
+        "description": "監視する地域を選択し、地震のフィルター条件を設定します。",
+        "data": {
+          "place": "地域",
+          "min_magnitude": "最小マグニチュード",
+          "max_distance": "最大距離 (km)"
+        },
+        "data_description": {
+          "max_distance": "地域や国の場合、距離は範囲全体ではなく、その内部にある1つの基準点から測定されます。広い地域や国を監視していて該当件数が少なすぎる場合は、かなり大きな値を設定してください。"
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "earthquakelist.org に接続できませんでした。インターネット接続を確認してください。",
+      "no_results": "一致する地域が見つかりませんでした。別の検索キーワードをお試しください。",
+      "invalid_place": "リストから地域を選択してください。"
+    },
+    "abort": {
+      "already_configured": "この地域はすでに設定されています。"
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "地震フィルター",
+        "description": "最新の地震を判定するために使用するマグニチュードと距離のフィルターを調整します。",
+        "data": {
+          "min_magnitude": "最小マグニチュード",
+          "max_distance": "最大距離 (km)"
+        },
+        "data_description": {
+          "max_distance": "地域や国の場合、距離は範囲全体ではなく、その内部にある1つの基準点から測定されます。広い地域や国を監視していて該当件数が少なすぎる場合は、かなり大きな値を設定してください。"
+        }
+      }
+    }
+  },
+  "entity": {
+    "sensor": {
+      "latest_earthquake": {
+        "name": "最新の地震"
+      }
+    }
+  }
+}

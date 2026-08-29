@@ -6,15 +6,25 @@
     "title": "Titel (optional)",
     "places": "Orte",
     "show_map": "Karte anzeigen",
-    "show_list": "Liste der letzten Erdbeben anzeigen",
+    "show_list": "Liste vorheriger Erdbeben anzeigen",
     "max_list_items": "Max. Listeneinträge"
   },
   "card": {
     "tsunami_alert": "Tsunami-Warnung",
     "distance": "Entfernung",
     "depth": "Tiefe",
-    "recent_earthquakes": "Letzte Erdbeben",
-    "no_data": "Noch keine Erdbebendaten"
+    "no_data": "Noch keine Erdbebendaten",
+    "offshore": "Offshore",
+    "felt_reports": "Gespürt von {count}",
+    "read_more": "Mehr erfahren",
+    "local_time": "{time} (Ortszeit {zone})",
+    "show_details": "Erdbeben-Details anzeigen",
+    "recenter_map": "Karte neu zentrieren und Auto-Zoom aktivieren",
+    "autozoom_enabled": "Auto-Zoom aktiv",
+    "previous_earthquakes": "Vorherige Erdbeben",
+    "alert_yellow": "Warnstufe Gelb",
+    "alert_orange": "Warnstufe Orange",
+    "alert_red": "Warnstufe Rot"
   },
   "common": {
     "errors": {

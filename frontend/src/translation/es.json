@@ -1,0 +1,34 @@
+{
+  "editor": {
+    "groups": {
+      "display": "Visualización"
+    },
+    "title": "Título (opcional)",
+    "places": "Ubicaciones",
+    "show_map": "Mostrar mapa",
+    "show_list": "Mostrar lista de terremotos anteriores",
+    "max_list_items": "Máx. elementos de la lista"
+  },
+  "card": {
+    "tsunami_alert": "Alerta de tsunami",
+    "distance": "Distancia",
+    "depth": "Profundidad",
+    "no_data": "Aún no hay datos de terremotos",
+    "offshore": "Mar adentro",
+    "felt_reports": "Sentido por {count}",
+    "read_more": "Leer más",
+    "local_time": "{time} (hora de {zone})",
+    "show_details": "Mostrar detalles del terremoto",
+    "recenter_map": "Centrar el mapa y activar el zoom automático",
+    "autozoom_enabled": "Zoom automático activado",
+    "previous_earthquakes": "Terremotos anteriores",
+    "alert_yellow": "Alerta amarilla",
+    "alert_orange": "Alerta naranja",
+    "alert_red": "Alerta roja"
+  },
+  "common": {
+    "errors": {
+      "no_places": "Debes definir al menos una ubicación."
+    }
+  }
+}

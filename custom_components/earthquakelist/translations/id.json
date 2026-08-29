@@ -1,0 +1,55 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Cari Lokasi",
+        "description": "Cari tempat, wilayah, atau negara untuk dipantau gempa buminya.",
+        "data": {
+          "query": "Kata kunci pencarian"
+        }
+      },
+      "select": {
+        "title": "Pilih Lokasi",
+        "description": "Pilih lokasi yang akan dipantau dan tetapkan kriteria filter gempa bumi.",
+        "data": {
+          "place": "Lokasi",
+          "min_magnitude": "Magnitudo minimum",
+          "max_distance": "Jarak maksimum (km)"
+        },
+        "data_description": {
+          "max_distance": "Untuk wilayah atau negara, jarak diukur dari satu titik acuan di dalamnya, bukan dari seluruh area — gunakan nilai yang jauh lebih besar jika Anda memantau wilayah/negara yang luas dan hasilnya terlalu sedikit."
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "Gagal terhubung ke earthquakelist.org. Silakan periksa koneksi internet Anda.",
+      "no_results": "Tidak ada lokasi yang cocok. Coba kata kunci lain.",
+      "invalid_place": "Silakan pilih lokasi dari daftar."
+    },
+    "abort": {
+      "already_configured": "Lokasi ini sudah dikonfigurasi."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Filter Gempa Bumi",
+        "description": "Sesuaikan filter magnitudo dan jarak yang digunakan untuk menentukan gempa bumi terbaru.",
+        "data": {
+          "min_magnitude": "Magnitudo minimum",
+          "max_distance": "Jarak maksimum (km)"
+        },
+        "data_description": {
+          "max_distance": "Untuk wilayah atau negara, jarak diukur dari satu titik acuan di dalamnya, bukan dari seluruh area — gunakan nilai yang jauh lebih besar jika Anda memantau wilayah/negara yang luas dan hasilnya terlalu sedikit."
+        }
+      }
+    }
+  },
+  "entity": {
+    "sensor": {
+      "latest_earthquake": {
+        "name": "Gempa Bumi Terbaru"
+      }
+    }
+  }
+}
