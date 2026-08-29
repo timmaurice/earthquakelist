@@ -151,7 +151,7 @@ export class EarthquakeListCard extends LitElement implements LovelaceCard {
             ? html`<div class="alert-badges">
                 ${
                   latest.alert_tsunami
-                    ? html`<div class="alert-badge tsunami">
+                    ? html`<div class="alert-badge tsunami" title=${localize(this.hass, 'card.tsunami_hint')}>
                         <ha-icon icon="mdi:tsunami"></ha-icon>${localize(this.hass, 'card.tsunami_alert')}
                       </div>`
                     : nothing
@@ -263,7 +263,7 @@ export class EarthquakeListCard extends LitElement implements LovelaceCard {
                 ? html`<ha-icon
                     class="quake-item-tsunami"
                     icon="mdi:tsunami"
-                    title=${localize(this.hass, 'card.tsunami_alert')}
+                    title=${`${localize(this.hass, 'card.tsunami_alert')} — ${localize(this.hass, 'card.tsunami_hint')}`}
                   ></ha-icon>`
                 : nothing
             }

@@ -10,7 +10,7 @@
     "max_list_items": "Max. list items"
   },
   "card": {
-    "tsunami_alert": "Tsunami alert",
+    "tsunami_alert": "Tsunami possible",
     "distance": "Distance",
     "depth": "Depth",
     "no_data": "No earthquake data yet",
@@ -24,7 +24,8 @@
     "previous_earthquakes": "Previous Earthquakes",
     "alert_yellow": "Yellow alert",
     "alert_orange": "Orange alert",
-    "alert_red": "Red alert"
+    "alert_red": "Red alert",
+    "tsunami_hint": "Large offshore earthquake, flagged by USGS for tsunami evaluation — not a confirmed warning"
   },
   "common": {
     "errors": {

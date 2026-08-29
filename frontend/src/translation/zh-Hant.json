@@ -10,7 +10,7 @@
     "max_list_items": "最大清單項目數"
   },
   "card": {
-    "tsunami_alert": "海嘯警報",
+    "tsunami_alert": "可能引發海嘯",
     "distance": "距離",
     "depth": "深度",
     "no_data": "尚無地震資料",
@@ -24,7 +24,8 @@
     "previous_earthquakes": "先前的地震",
     "alert_yellow": "黃色警報",
     "alert_orange": "橙色警報",
-    "alert_red": "紅色警報"
+    "alert_red": "紅色警報",
+    "tsunami_hint": "大規模海域地震，USGS 標記為需評估海嘯 — 並非已確認的警報"
   },
   "common": {
     "errors": {

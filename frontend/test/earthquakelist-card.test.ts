@@ -126,7 +126,13 @@ describe('EarthquakeListCard', () => {
     document.body.appendChild(card);
     await card.updateComplete;
 
-    expect(card.shadowRoot?.querySelector('.alert-badge.tsunami')).not.toBeNull();
+    const tsunami = card.shadowRoot?.querySelector('.alert-badge.tsunami');
+    expect(tsunami).not.toBeNull();
+    // USGS only flags "large event in an oceanic region", so the badge must not claim an
+    // issued warning, and must carry the qualifier as a tooltip.
+    expect(tsunami?.textContent?.trim()).toBe('Tsunami possible');
+    expect(tsunami?.getAttribute('title')).toContain('not a confirmed warning');
+
     expect(card.shadowRoot?.querySelector('.alert-badge.impact-red')).not.toBeNull();
     // Both badges share one row container rather than stacking.
     expect(card.shadowRoot?.querySelectorAll('.alert-badges > .alert-badge')).toHaveLength(2);

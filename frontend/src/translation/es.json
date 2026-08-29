@@ -10,7 +10,7 @@
     "max_list_items": "Máx. elementos de la lista"
   },
   "card": {
-    "tsunami_alert": "Alerta de tsunami",
+    "tsunami_alert": "Posible tsunami",
     "distance": "Distancia",
     "depth": "Profundidad",
     "no_data": "Aún no hay datos de terremotos",
@@ -24,7 +24,8 @@
     "previous_earthquakes": "Terremotos anteriores",
     "alert_yellow": "Alerta amarilla",
     "alert_orange": "Alerta naranja",
-    "alert_red": "Alerta roja"
+    "alert_red": "Alerta roja",
+    "tsunami_hint": "Terremoto marino de gran magnitud, marcado por el USGS para evaluación de tsunami — no es un aviso confirmado"
   },
   "common": {
     "errors": {
