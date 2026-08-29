@@ -15,7 +15,7 @@
   }
 }
 
-.leaflet-map {
+.map-container {
   border: 1px solid var(--divider-color, #e0e0e0);
   border-radius: var(--ha-card-border-radius, 4px);
   height: var(--earthquakelist-map-height, 220px);
@@ -28,7 +28,7 @@
   }
 }
 
-.leaflet-eq-marker {
+.eq-marker {
   align-items: center;
   border: 2px solid white;
   border-radius: 50%;
@@ -57,30 +57,52 @@
   }
 }
 
-.leaflet-eq-marker-wrapper.latest .leaflet-eq-marker {
+.eq-marker-wrapper.latest .eq-marker {
   animation: pulse 1.8s ease-out infinite;
 }
 
-.leaflet-control a.recenter-button.active {
-  background-color: var(--primary-color);
-  color: white;
+// MapLibre's control container and marker layer are plain unpositioned siblings, so a
+// marker could otherwise paint over the controls.
+.maplibregl-control-container {
+  position: relative;
+  z-index: 10000;
+}
+
+// Clips children to the group's rounded corners — MapLibre's own rounding only applies to
+// `<button>` children via :first-child/:last-child, not our `<a>`-based recenter button.
+.maplibregl-ctrl-group {
+  overflow: hidden;
+}
+
+.maplibregl-ctrl-group a.recenter-button {
+  align-items: center;
+  cursor: pointer;
+  display: flex;
+  height: 29px;
+  justify-content: center;
+  width: 29px;
+
+  &.active {
+    background-color: var(--primary-color);
+    color: white;
+  }
 }
 
 @container (width < 250px) {
-  .leaflet-map {
+  .map-container {
     aspect-ratio: 4 / 3;
     height: auto;
 
-    .leaflet-bar a,
-    .leaflet-bar a:hover {
+    .maplibregl-ctrl-group button,
+    .maplibregl-ctrl-group a.recenter-button {
       height: 20px;
       line-height: 20px;
       width: 20px;
     }
 
-    .leaflet-control-zoom-in,
-    .leaflet-control-zoom-out {
-      font-size: 16px;
+    .maplibregl-ctrl-group a.recenter-button {
+      --mdc-icon-size: 16px;
+      line-height: 16px;
     }
   }
 }
