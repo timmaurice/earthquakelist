@@ -114,7 +114,7 @@ export class EarthquakeListCard extends LitElement implements LovelaceCard {
     const latest = earthquakes[0];
     const severity = magnitudeSeverity(latest.magnitude);
     const timeAgo = latest.time ? formatRelativeTime(latest.time, this.hass) : '';
-    const showAlert = Boolean(latest.alert_tsunami) || Boolean(latest.alert_level);
+    const impactLevel = this._impactAlertLevel(latest);
     const maxItems = this._config.max_list_items ?? 5;
 
     return html`
@@ -147,9 +147,22 @@ export class EarthquakeListCard extends LitElement implements LovelaceCard {
         </div>
 
         ${
-          showAlert
-            ? html`<div class="alert-badge">
-                <ha-icon icon="mdi:tsunami"></ha-icon>${localize(this.hass, 'card.tsunami_alert')}
+          latest.alert_tsunami || impactLevel
+            ? html`<div class="alert-badges">
+                ${
+                  latest.alert_tsunami
+                    ? html`<div class="alert-badge tsunami">
+                        <ha-icon icon="mdi:tsunami"></ha-icon>${localize(this.hass, 'card.tsunami_alert')}
+                      </div>`
+                    : nothing
+                }
+                ${
+                  impactLevel
+                    ? html`<div class="alert-badge impact-${impactLevel}">
+                        <ha-icon icon="mdi:alert"></ha-icon>${localize(this.hass, `card.alert_${impactLevel}`)}
+                      </div>`
+                    : nothing
+                }
               </div>`
             : nothing
         }
@@ -173,6 +186,14 @@ export class EarthquakeListCard extends LitElement implements LovelaceCard {
         }
       </div>
     `;
+  }
+
+  // USGS PAGER impact level, which is separate from a tsunami alert. `green` is the
+  // "no response needed" level, so surfacing it as a warning would just cry wolf —
+  // in practice almost every quake the API returns carries green.
+  private _impactAlertLevel(eq: EarthquakeListItem): 'yellow' | 'orange' | 'red' | undefined {
+    const level = eq.alert_level?.toLowerCase();
+    return level === 'yellow' || level === 'orange' || level === 'red' ? level : undefined;
   }
 
   private _showMoreInfo(entityId: string): void {
@@ -238,11 +259,20 @@ export class EarthquakeListCard extends LitElement implements LovelaceCard {
           <span class="quake-item-place">
             ${eq.place ?? eq.location ?? '—'}
             ${
-              eq.alert_tsunami || eq.alert_level
+              eq.alert_tsunami
                 ? html`<ha-icon
                     class="quake-item-tsunami"
                     icon="mdi:tsunami"
                     title=${localize(this.hass, 'card.tsunami_alert')}
+                  ></ha-icon>`
+                : nothing
+            }
+            ${
+              this._impactAlertLevel(eq)
+                ? html`<ha-icon
+                    class="quake-item-impact impact-${this._impactAlertLevel(eq)}"
+                    icon="mdi:alert"
+                    title=${localize(this.hass, `card.alert_${this._impactAlertLevel(eq)}`)}
                   ></ha-icon>`
                 : nothing
             }
