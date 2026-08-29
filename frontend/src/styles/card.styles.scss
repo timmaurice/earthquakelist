@@ -31,10 +31,38 @@
   gap: 8px;
 }
 
+.place-name-group {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+}
+
 .place-name {
   font-size: 1.05em;
   font-weight: 500;
   color: var(--primary-text-color);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.entity-info-button {
+  flex: 0 0 auto;
+  --mdc-icon-size: 16px;
+  color: var(--secondary-text-color);
+  cursor: pointer;
+  border-radius: 50%;
+
+  &:hover,
+  &:focus-visible {
+    color: var(--primary-color);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--primary-color);
+    outline-offset: 2px;
+  }
 }
 
 .place-time {
@@ -92,25 +120,98 @@
   white-space: nowrap;
 }
 
-.summary-meta {
+.summary-meta,
+.quake-item-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
   font-size: 0.85em;
   color: var(--secondary-text-color);
+}
+
+.meta-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+
+  ha-icon {
+    --mdc-icon-size: 15px;
+  }
+}
+
+// Badges sit side by side and wrap only when the card is too narrow for both.
+.alert-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
 }
 
 .alert-badge {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  align-self: flex-start;
   padding: 4px 10px;
   border-radius: 12px;
   font-size: 0.85em;
   font-weight: 500;
-  background-color: color-mix(in srgb, var(--error-color, #db4437) 15%, transparent);
-  color: var(--error-color, #db4437);
+  background-color: color-mix(in srgb, var(--alert-color) 15%, transparent);
+  color: var(--alert-color);
+
+  // Tsunami and PAGER impact level are distinct alerts — see `_impactAlertLevel` in the card.
+  &.tsunami,
+  &.impact-red {
+    --alert-color: var(--error-color, #db4437);
+  }
+
+  &.impact-orange {
+    --alert-color: var(--eq-orange, #ff7f27);
+  }
+
+  &.impact-yellow {
+    --alert-color: var(--warning-color, #ffc107);
+  }
 
   ha-icon {
     --mdc-icon-size: 20px;
+  }
+}
+
+.quake-item-impact {
+  flex: 0 0 auto;
+  --mdc-icon-size: 15px;
+
+  &.impact-red {
+    color: var(--error-color, #db4437);
+  }
+  &.impact-orange {
+    color: var(--eq-orange, #ff7f27);
+  }
+  &.impact-yellow {
+    color: var(--warning-color, #ffc107);
+  }
+}
+
+.news-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  align-self: flex-start;
+  font-size: 0.85em;
+  color: var(--primary-color);
+  text-decoration: none;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 100%;
+
+  &:hover {
+    text-decoration: underline;
+  }
+
+  ha-icon {
+    flex: 0 0 auto;
+    --mdc-icon-size: 16px;
   }
 }
 
@@ -193,11 +294,6 @@
   flex: 0 0 auto;
   color: var(--error-color, #db4437);
   --mdc-icon-size: 15px;
-}
-
-.quake-item-meta {
-  font-size: 0.8em;
-  color: var(--secondary-text-color);
 }
 
 .quake-item-time {

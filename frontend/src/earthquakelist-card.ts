@@ -3,7 +3,7 @@ import { property, state } from 'lit/decorators.js';
 import styles from './styles/card.styles.scss';
 import './components/map';
 import { EarthquakeListCardConfig, EarthquakeListItem, HomeAssistant, LovelaceCard, LovelaceCardEditor } from './types';
-import { formatRelativeTime, magnitudeSeverity } from './utils';
+import { fireEvent, formatRelativeTime, magnitudeSeverity } from './utils';
 import { localize } from './localize';
 
 interface ResolvedPlace {
@@ -70,6 +70,15 @@ export class EarthquakeListCard extends LitElement implements LovelaceCard {
         direction: attrs.direction,
         alert_tsunami: attrs.alert_tsunami,
         alert_level: attrs.alert_level,
+        mmi: attrs.mmi,
+        felt: attrs.felt,
+        significance: attrs.significance,
+        usgs_code: attrs.usgs_code,
+        news_link: attrs.news_link,
+        news_title: attrs.news_title,
+        offshore: attrs.offshore,
+        local_timezone: attrs.local_timezone,
+        local_timezone_short: attrs.local_timezone_short,
       },
     ];
   }
@@ -111,7 +120,19 @@ export class EarthquakeListCard extends LitElement implements LovelaceCard {
     return html`
       <div class="place-row">
         <div class="place-header">
-          <span class="place-name">${name}</span>
+          <span class="place-name-group">
+            <span class="place-name">${name}</span>
+            <ha-icon
+              class="entity-info-button"
+              icon="mdi:information-outline"
+              role="button"
+              tabindex="0"
+              aria-label=${localize(this.hass, 'card.show_details')}
+              title=${localize(this.hass, 'card.show_details')}
+              @click=${() => this._showMoreInfo(place.entityId)}
+              @keydown=${(e: KeyboardEvent) => this._handleEntityLinkKeydown(e, place.entityId)}
+            ></ha-icon>
+          </span>
           <span class="place-time">${timeAgo}</span>
         </div>
 
@@ -121,18 +142,7 @@ export class EarthquakeListCard extends LitElement implements LovelaceCard {
           </div>
           <div class="summary-details">
             <span class="summary-location">${latest.place ?? latest.location ?? '—'}</span>
-            <span class="summary-meta">
-              ${
-                latest.distance_km !== undefined
-                  ? `${localize(this.hass, 'card.distance')}: ${Math.round(latest.distance_km)} km ${latest.direction ?? ''}`
-                  : ''
-              }
-              ${
-                latest.depth_km !== undefined
-                  ? ` · ${localize(this.hass, 'card.depth')}: ${Math.round(latest.depth_km)} km`
-                  : ''
-              }
-            </span>
+            <span class="summary-meta">${this._renderMetaChips(latest)}</span>
           </div>
         </div>
 
@@ -143,6 +153,7 @@ export class EarthquakeListCard extends LitElement implements LovelaceCard {
               </div>`
             : nothing
         }
+        ${this._renderNewsLink(latest)}
         ${
           this._config.show_map
             ? html`<div class="map-wrapper">
@@ -154,7 +165,7 @@ export class EarthquakeListCard extends LitElement implements LovelaceCard {
           this._config.show_list && earthquakes.length > 1
             ? html`
                 <div class="quake-list">
-                  <div class="quake-list-title">${localize(this.hass, 'card.recent_earthquakes')}</div>
+                  <div class="quake-list-title">${localize(this.hass, 'card.previous_earthquakes')}</div>
                   ${earthquakes.slice(1, 1 + maxItems).map((eq) => this._renderQuakeItem(eq))}
                 </div>
               `
@@ -162,6 +173,57 @@ export class EarthquakeListCard extends LitElement implements LovelaceCard {
         }
       </div>
     `;
+  }
+
+  private _showMoreInfo(entityId: string): void {
+    fireEvent(this, 'hass-more-info', { entityId });
+  }
+
+  private _handleEntityLinkKeydown(e: KeyboardEvent, entityId: string): void {
+    if (e.key !== 'Enter' && e.key !== ' ') return;
+    e.preventDefault();
+    this._showMoreInfo(entityId);
+  }
+
+  private _renderMetaChips(eq: EarthquakeListItem): TemplateResult[] {
+    const chips: TemplateResult[] = [];
+    if (eq.distance_km !== undefined) {
+      const distance = `${Math.round(eq.distance_km)} km ${eq.direction ?? ''}`.trim();
+      chips.push(
+        html`<span class="meta-chip" title=${localize(this.hass, 'card.distance')}>
+          <ha-icon icon="mdi:map-marker-distance"></ha-icon>${distance}
+        </span>`,
+      );
+    }
+    if (eq.depth_km !== undefined) {
+      chips.push(
+        html`<span class="meta-chip" title=${localize(this.hass, 'card.depth')}>
+          <ha-icon icon="mdi:arrow-expand-down"></ha-icon>${Math.round(eq.depth_km)} km
+        </span>`,
+      );
+    }
+    if (eq.offshore) {
+      chips.push(
+        html`<span class="meta-chip" title=${localize(this.hass, 'card.offshore')}>
+          <ha-icon icon="mdi:waves"></ha-icon>
+        </span>`,
+      );
+    }
+    if (eq.felt !== undefined && eq.felt > 0) {
+      chips.push(
+        html`<span class="meta-chip" title=${localize(this.hass, 'card.felt_reports', { count: eq.felt })}>
+          <ha-icon icon="mdi:account-voice"></ha-icon>${eq.felt}
+        </span>`,
+      );
+    }
+    return chips;
+  }
+
+  private _renderNewsLink(eq: EarthquakeListItem): TemplateResult | typeof nothing {
+    if (!eq.news_link) return nothing;
+    return html`<a class="news-link" href=${eq.news_link} target="_blank" rel="noopener noreferrer">
+      <ha-icon icon="mdi:newspaper-variant-outline"></ha-icon>${eq.news_title ?? localize(this.hass, 'card.read_more')}
+    </a>`;
   }
 
   private _renderQuakeItem(eq: EarthquakeListItem): TemplateResult {
@@ -185,10 +247,8 @@ export class EarthquakeListCard extends LitElement implements LovelaceCard {
                 : nothing
             }
           </span>
-          <span class="quake-item-meta">
-            ${eq.distance_km !== undefined ? `${Math.round(eq.distance_km)} km ${eq.direction ?? ''}` : ''}
-            ${eq.depth_km !== undefined ? ` · ${localize(this.hass, 'card.depth')}: ${Math.round(eq.depth_km)} km` : ''}
-          </span>
+          <span class="quake-item-meta">${this._renderMetaChips(eq)}</span>
+          ${this._renderNewsLink(eq)}
         </div>
         <div class="quake-item-time">${timeAgo}</div>
       </div>
