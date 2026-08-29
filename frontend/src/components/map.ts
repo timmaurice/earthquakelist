@@ -5,18 +5,17 @@ import maplibreCss from 'maplibre-gl/dist/maplibre-gl.css';
 import mapStyles from '../styles/map-styles.scss';
 import { EarthquakeListItem, HomeAssistant } from '../types';
 import { magnitudeSeverity } from '../utils';
+import { localize } from '../localize';
 
-/**
- * Custom top-left control that lets the user re-enable auto-zoom after they've
- * manually panned/zoomed the map. Mirrors MapLibre's own control chrome
- * (`maplibregl-ctrl`/`maplibregl-ctrl-group`) so it visually matches the built-in
- * zoom control it's stacked beneath.
- */
+// Re-enables auto-zoom after the user manually pans/zooms.
 class RecenterControl implements IControl {
   private _container: HTMLElement | undefined;
   private _link: HTMLAnchorElement | undefined;
 
-  constructor(private readonly onClick: () => void) {}
+  constructor(
+    private readonly onClick: () => void,
+    private readonly ariaLabel: string,
+  ) {}
 
   onAdd(): HTMLElement {
     const container = document.createElement('div');
@@ -27,7 +26,7 @@ class RecenterControl implements IControl {
     link.href = '#';
     link.innerHTML = `<ha-icon icon="mdi:crosshairs-gps"></ha-icon>`;
     link.setAttribute('role', 'button');
-    link.setAttribute('aria-label', 'Recenter map');
+    link.setAttribute('aria-label', this.ariaLabel);
     link.addEventListener('click', (e) => {
       e.preventDefault();
       e.stopPropagation();
@@ -87,11 +86,7 @@ export class EarthquakeListMap extends LitElement {
 
   private async _getMapLibre() {
     if (!this._maplibregl) {
-      // maplibre-gl is pinned to v5 (see package.json): its dist/maplibre-gl.js is a
-      // self-contained build that constructs its Web Worker from an inline Blob
-      // automatically, no manual setWorkerUrl() wiring needed. v6 dropped that in favor of
-      // a separately-hosted worker file, which doesn't fit this project's single-file
-      // bundle — don't bump past v5 without re-solving that.
+      // Stay on v5.
       this._maplibregl = await import('maplibre-gl');
     }
     return this._maplibregl!;
@@ -101,12 +96,90 @@ export class EarthquakeListMap extends LitElement {
     return eq.id ?? `${eq.latitude},${eq.longitude},${eq.time}`;
   }
 
-  // Marks the next camera movement(s) as programmatic rather than user-initiated, so the
-  // zoomstart/movestart/dragstart listeners below don't mistake them for real interaction and
-  // disable auto-zoom. Used both for our own fitBounds/jumpTo calls and for `_map.resize()` —
-  // MapLibre can reposition the camera during a resize (e.g. on first layout, or whenever the
-  // card's container size settles inside HA's grid), and that's just as capable of firing
-  // move events as an explicit zoom.
+  private _escapeHtml(value: string): string {
+    return value
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
+  }
+
+  private _formatPopupTime(eq: EarthquakeListItem): string {
+    if (!eq.time) return '';
+    const date = new Date(eq.time);
+    if (eq.local_timezone) {
+      try {
+        const local = date.toLocaleString(this.hass?.language, { timeZone: eq.local_timezone });
+        return eq.local_timezone_short
+          ? localize(this.hass, 'card.local_time', { time: local, zone: this._escapeHtml(eq.local_timezone_short) })
+          : local;
+      } catch {
+        // invalid timezone name — fall through to the viewer's own timezone below
+      }
+    }
+    return date.toLocaleString(this.hass?.language);
+  }
+
+  private _popupChip(icon: string, value: string, tooltip: string): string {
+    return `<span class="popup-chip" title="${this._escapeHtml(tooltip)}"><ha-icon icon="${icon}"></ha-icon>${this._escapeHtml(value)}</span>`;
+  }
+
+  private _buildPopupHtml(eq: EarthquakeListItem): string {
+    const time = this._formatPopupTime(eq);
+    const place = this._escapeHtml(eq.place ?? eq.location ?? '');
+    const lines = [`<strong>M${eq.magnitude?.toFixed(1) ?? '?'}</strong> ${place}`, time];
+
+    const chips: string[] = [];
+    if (eq.distance_km !== undefined) {
+      const distance = `${Math.round(eq.distance_km)} km ${eq.direction ?? ''}`.trim();
+      chips.push(this._popupChip('mdi:map-marker-distance', distance, localize(this.hass, 'card.distance')));
+    }
+    if (eq.depth_km !== undefined) {
+      chips.push(
+        this._popupChip('mdi:arrow-expand-down', `${Math.round(eq.depth_km)} km`, localize(this.hass, 'card.depth')),
+      );
+    }
+    if (eq.offshore) {
+      chips.push(this._popupChip('mdi:waves', '', localize(this.hass, 'card.offshore')));
+    }
+    if (eq.felt !== undefined && eq.felt > 0) {
+      chips.push(
+        this._popupChip(
+          'mdi:account-voice',
+          String(eq.felt),
+          localize(this.hass, 'card.felt_reports', { count: eq.felt }),
+        ),
+      );
+    }
+    if (chips.length) lines.push(`<div class="popup-chips">${chips.join('')}</div>`);
+
+    if (eq.news_link && /^https?:\/\//i.test(eq.news_link)) {
+      const href = this._escapeHtml(eq.news_link);
+      const label = this._escapeHtml(eq.news_title ?? localize(this.hass, 'card.read_more'));
+      lines.push(`<a href="${href}" target="_blank" rel="noopener noreferrer">${label}</a>`);
+    }
+    return lines.filter(Boolean).join('<br>');
+  }
+
+  // `compact: true` alone doesn't start the attribution collapsed: MapLibre populates it
+  // asynchronously (styledata), and that first population is what adds `maplibregl-compact`
+  // *and* `-compact-show`. So collapse once it actually has content, not at init.
+  private _collapseAttributionOnce(mapContainer: HTMLElement): void {
+    if (!this._map) return;
+    const collapse = () => {
+      const attrib = mapContainer.querySelector('.maplibregl-ctrl-attrib');
+      if (!attrib || attrib.classList.contains('maplibregl-attrib-empty')) return;
+      attrib.classList.remove('maplibregl-compact-show');
+      attrib.removeAttribute('open');
+      this._map?.off('styledata', collapse);
+      this._map?.off('sourcedata', collapse);
+    };
+    this._map.on('styledata', collapse);
+    this._map.on('sourcedata', collapse);
+  }
+
+  // Suppresses the interaction listeners below for our own camera moves (fitBounds/jumpTo/resize).
   private _beginProgrammaticMapChange(): void {
     if (!this._map) return;
     this._programmaticMapChange = true;
@@ -161,8 +234,11 @@ export class EarthquakeListMap extends LitElement {
         style: styleUrl,
         center: [0, 0],
         zoom: 0,
+        attributionControl: false,
       });
 
+      this._map.addControl(new maplibregl.AttributionControl({ compact: true }), 'bottom-right');
+      this._collapseAttributionOnce(mapContainer);
       this._map.addControl(new maplibregl.NavigationControl({ showCompass: false }), 'top-left');
 
       const markUserInteracted = () => {
@@ -176,11 +252,14 @@ export class EarthquakeListMap extends LitElement {
       this._map.on('dragstart', markUserInteracted);
       this._map.on('moveend', this._handleMapMoveEnd);
 
-      const recenterControl = new RecenterControl(() => {
-        this._userInteractedWithMap = false;
-        this._updateMapMarkers();
-        this._updateRecenterButtonState();
-      });
+      const recenterControl = new RecenterControl(
+        () => {
+          this._userInteractedWithMap = false;
+          this._updateMapMarkers();
+          this._updateRecenterButtonState();
+        },
+        localize(this.hass, 'card.recenter_map'),
+      );
       this._map.addControl(recenterControl, 'top-left');
       this._recenterButton = recenterControl.getLink();
 
@@ -222,9 +301,7 @@ export class EarthquakeListMap extends LitElement {
       const severity = magnitudeSeverity(eq.magnitude);
       const size = 18 + Math.round((eq.magnitude ?? 3) * 2);
       const isLatest = index === 0;
-      // MapLibre marker elements stack by DOM insertion order when no z-index is set — since
-      // the latest quake is inserted first (index 0), older quakes added afterward would
-      // otherwise paint over its pulsing halo. Rank newer quakes above older ones instead.
+      // Rank newer quakes above older ones so the latest marker's pulse never paints under another.
       const zIndex = this.earthquakes.length - index + (isLatest ? 1000 : 0);
 
       if (!this._quakeMarkers.has(key)) {
@@ -235,10 +312,11 @@ export class EarthquakeListMap extends LitElement {
           eq.magnitude !== undefined ? eq.magnitude.toFixed(1) : ''
         }</div>`;
 
-        const time = eq.time ? new Date(eq.time).toLocaleString(this.hass?.language) : '';
-        const popup = new maplibregl.Popup({ offset: size / 2 + 4 }).setHTML(
-          `<strong>M${eq.magnitude?.toFixed(1) ?? '?'}</strong> ${eq.place ?? eq.location ?? ''}<br>${time}`,
-        );
+        const darkMode = this.hass?.themes?.darkMode ?? false;
+        const popup = new maplibregl.Popup({
+          offset: size / 2 + 4,
+          className: darkMode ? 'eq-popup-dark' : 'eq-popup-light',
+        }).setHTML(this._buildPopupHtml(eq));
 
         const marker = new maplibregl.Marker({ element: wrapper })
           .setLngLat([eq.longitude, eq.latitude])
@@ -266,9 +344,7 @@ export class EarthquakeListMap extends LitElement {
     const southWest = bounds.getSouthWest();
     const isRealBounds = northEast.lng !== southWest.lng || northEast.lat !== southWest.lat;
 
-    // The very first fit snaps straight to the target view instead of flying there —
-    // otherwise every card load briefly shows the whole world (the map starts at
-    // center [0,0]/zoom 0) before animating in.
+    // First fit snaps directly instead of flying in from the initial [0,0]/zoom-0 view.
     const animate = this._hasAutoZoomedOnce;
     this._hasAutoZoomedOnce = true;
 
@@ -283,13 +359,13 @@ export class EarthquakeListMap extends LitElement {
   private _updateRecenterButtonState(): void {
     if (!this._recenterButton) return;
 
-    if (this._userInteractedWithMap) {
-      this._recenterButton.classList.remove('active');
-      this._recenterButton.setAttribute('aria-label', 'Recenter map and enable auto-zoom');
-    } else {
-      this._recenterButton.classList.add('active');
-      this._recenterButton.title = 'Auto-zoom enabled';
-    }
+    const autoZoomActive = !this._userInteractedWithMap;
+    this._recenterButton.classList.toggle('active', autoZoomActive);
+    // aria-label always names the action; the tooltip additionally reflects current state.
+    this._recenterButton.setAttribute('aria-label', localize(this.hass, 'card.recenter_map'));
+    this._recenterButton.title = autoZoomActive
+      ? localize(this.hass, 'card.autozoom_enabled')
+      : localize(this.hass, 'card.recenter_map');
   }
 
   private _destroyMap(): void {
