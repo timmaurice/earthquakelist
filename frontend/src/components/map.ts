@@ -125,10 +125,13 @@ export class EarthquakeListMap extends LitElement {
     return `<span class="popup-chip" title="${this._escapeHtml(tooltip)}"><ha-icon icon="${icon}"></ha-icon>${this._escapeHtml(value)}</span>`;
   }
 
+  // Blocks, not `<br>`-joined lines: a block-level element between two `<br>` renders an
+  // extra blank line on each side, which left a large gap around the chip row.
   private _buildPopupHtml(eq: EarthquakeListItem): string {
     const time = this._formatPopupTime(eq);
     const place = this._escapeHtml(eq.place ?? eq.location ?? '');
-    const lines = [`<strong>M${eq.magnitude?.toFixed(1) ?? '?'}</strong> ${place}`, time];
+    const blocks = [`<div class="popup-title"><strong>M${eq.magnitude?.toFixed(1) ?? '?'}</strong> ${place}</div>`];
+    if (time) blocks.push(`<div class="popup-time">${this._escapeHtml(time)}</div>`);
 
     const chips: string[] = [];
     if (eq.distance_km !== undefined) {
@@ -152,14 +155,20 @@ export class EarthquakeListMap extends LitElement {
         ),
       );
     }
-    if (chips.length) lines.push(`<div class="popup-chips">${chips.join('')}</div>`);
+    if (chips.length) blocks.push(`<div class="popup-chips">${chips.join('')}</div>`);
 
     if (eq.news_link && /^https?:\/\//i.test(eq.news_link)) {
       const href = this._escapeHtml(eq.news_link);
-      const label = this._escapeHtml(eq.news_title ?? localize(this.hass, 'card.read_more'));
-      lines.push(`<a href="${href}" target="_blank" rel="noopener noreferrer">${label}</a>`);
+      // The headline goes in the tooltip, not the link text: in a popup this narrow a real
+      // headline wraps to three lines and dominates everything else.
+      const title = eq.news_title ? ` title="${this._escapeHtml(eq.news_title)}"` : '';
+      const label = this._escapeHtml(localize(this.hass, 'card.read_more'));
+      blocks.push(
+        `<a class="popup-news" href="${href}" target="_blank" rel="noopener noreferrer"${title}>` +
+          `<ha-icon icon="mdi:newspaper-variant-outline"></ha-icon>${label}</a>`,
+      );
     }
-    return lines.filter(Boolean).join('<br>');
+    return blocks.join('');
   }
 
   // `compact: true` alone doesn't start the attribution collapsed: MapLibre populates it
@@ -241,11 +250,17 @@ export class EarthquakeListMap extends LitElement {
       this._collapseAttributionOnce(mapContainer);
       this._map.addControl(new maplibregl.NavigationControl({ showCompass: false }), 'top-left');
 
-      const markUserInteracted = () => {
-        if (!this._programmaticMapChange) {
-          this._userInteractedWithMap = true;
-          this._updateRecenterButtonState();
-        }
+      // MapLibre sets `originalEvent` only for camera changes a person actually caused
+      // (drag, wheel, touch, keyboard), which is a far more reliable signal than the timing
+      // guard: a single window resize fires move events after the guard's window has elapsed,
+      // which silently switched auto-zoom off — and the view was then never re-fitted for the
+      // new size, leaving markers clipped outside the map. The guard still applies
+      // `interaction-disabled` (pointer-events: none) during our own camera moves, so a real
+      // drag cannot reach the map while one is running anyway.
+      const markUserInteracted = (event?: { originalEvent?: unknown }) => {
+        if (!event?.originalEvent) return;
+        this._userInteractedWithMap = true;
+        this._updateRecenterButtonState();
       };
       this._map.on('zoomstart', markUserInteracted);
       this._map.on('movestart', markUserInteracted);
@@ -265,10 +280,12 @@ export class EarthquakeListMap extends LitElement {
 
       if (typeof ResizeObserver !== 'undefined') {
         this._resizeObserver = new ResizeObserver(() => {
-          if (this._map) {
-            this._beginProgrammaticMapChange();
-            this._map.resize();
-          }
+          if (!this._map) return;
+          this._beginProgrammaticMapChange();
+          this._map.resize();
+          // A fit computed for the old size no longer holds once the card changes width, so
+          // re-fit while auto-zoom is still on — otherwise markers end up outside the map.
+          if (!this._userInteractedWithMap) this._updateMapMarkers();
         });
         this._resizeObserver.observe(mapContainer);
       }
