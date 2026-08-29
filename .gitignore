@@ -1,6 +1,7 @@
 # Docker test environment
 config/
 *.pem
+docker-compose.override.yml
 
 *__pycache__*
 .pytest_cache/
