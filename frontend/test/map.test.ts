@@ -187,6 +187,28 @@ describe('EarthquakeListMap', () => {
     expect(mapInstanceMock.jumpTo).not.toHaveBeenCalled();
   });
 
+  it('keeps auto-zoom on for programmatic camera moves but disables it for real interaction', async () => {
+    const el = new EarthquakeListMap();
+    el.hass = makeHass();
+    el.earthquakes = [makeQuake()];
+    document.body.appendChild(el);
+    await waitForMap(el);
+
+    const handlerFor = (evt: string) =>
+      mapInstanceMock.on.mock.calls.find(([name]) => name === evt)?.[1] as (e?: unknown) => void;
+    const state = () => (el as unknown as { _userInteractedWithMap: boolean })._userInteractedWithMap;
+
+    // A resize makes MapLibre emit movestart with no `originalEvent`. This used to switch
+    // auto-zoom off, which then left the view un-refitted for the new size.
+    handlerFor('movestart')?.({});
+    handlerFor('zoomstart')?.(undefined);
+    expect(state()).toBe(false);
+
+    // A drag/wheel/touch carries `originalEvent` and must disable auto-zoom.
+    handlerFor('movestart')?.({ originalEvent: new MouseEvent('mousedown') });
+    expect(state()).toBe(true);
+  });
+
   it('renders an accessible recenter control', async () => {
     const el = new EarthquakeListMap();
     el.hass = makeHass();
@@ -260,7 +282,11 @@ describe('EarthquakeListMap', () => {
     expect(html).toContain('Offshore');
     expect(html).toContain('Felt by 312');
     expect(html).toContain('href="https://example.com/article"');
-    expect(html).toContain('Strong quake felt across the region');
+    // The headline is the tooltip, not the link text — it would wrap to several lines here.
+    expect(html).toContain('title="Strong quake felt across the region"');
+    expect(html).toContain('>Read more<');
+    // Blocks, not <br>-joined lines, so the chip row doesn't get blank lines around it.
+    expect(html).not.toContain('<br>');
   });
 
   it('does not link an unsafe news_link scheme into the popup', async () => {
