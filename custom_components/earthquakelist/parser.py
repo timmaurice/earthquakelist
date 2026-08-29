@@ -5,6 +5,9 @@ from __future__ import annotations
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from typing import Any
+from urllib.parse import urljoin
+
+from .const import BASE_URL
 
 
 def _to_float(value: Any) -> float | None:
@@ -35,6 +38,18 @@ def _to_str(value: Any) -> str | None:
     if value is None or value is False:
         return None
     return str(value)
+
+
+def _to_absolute_url(value: Any) -> str | None:
+    """Make a site-relative link from the API absolute.
+
+    The API returns news links as paths like "/news/2025/12/27/...", which a
+    browser would resolve against the Home Assistant instance rather than
+    earthquakelist.org. `place_url`/`link_url` are relative in the same way, but
+    are not rendered anywhere, so they are left untouched.
+    """
+    link = _to_str(value)
+    return urljoin(BASE_URL, link) if link else None
 
 
 @dataclass(slots=True)
@@ -160,7 +175,7 @@ def parse_earthquake(item: Any) -> EarthquakeData | None:
         felt=_to_int(eq.get("metric_felt")),
         significance=_to_int(eq.get("metric_sig")),
         usgs_code=_to_str(eq.get("usgs_code")),
-        news_link=_to_str(eq.get("news_link")),
+        news_link=_to_absolute_url(eq.get("news_link")),
         news_title=_to_str(eq.get("news_title")),
         offshore=_to_bool(eq.get("location_offshore")),
         local_timezone=_to_str(eq.get("local_timezone")),

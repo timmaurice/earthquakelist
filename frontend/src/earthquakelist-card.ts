@@ -242,8 +242,18 @@ export class EarthquakeListCard extends LitElement implements LovelaceCard {
 
   private _renderNewsLink(eq: EarthquakeListItem): TemplateResult | typeof nothing {
     if (!eq.news_link) return nothing;
-    return html`<a class="news-link" href=${eq.news_link} target="_blank" rel="noopener noreferrer">
-      <ha-icon icon="mdi:newspaper-variant-outline"></ha-icon>${eq.news_title ?? localize(this.hass, 'card.read_more')}
+    // The generated headlines restate the magnitude and place already shown in the row
+    // ("Shallow M6.0 Earthquake struck ... 104km from Kaohsiung in Taiwan"), so they go in
+    // the tooltip and the link itself stays short.
+    const label = localize(this.hass, 'card.read_more');
+    return html`<a
+      class="news-link"
+      href=${eq.news_link}
+      target="_blank"
+      rel="noopener noreferrer"
+      title=${eq.news_title ?? label}
+    >
+      <ha-icon icon="mdi:newspaper-variant-outline"></ha-icon><span class="news-link-text">${label}</span>
     </a>`;
   }
 

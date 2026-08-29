@@ -117,6 +117,38 @@ def test_parse_earthquake_reads_true_alert_and_tsunami_flags() -> None:
     assert earthquake.alert_tsunami is True
 
 
+def test_parse_earthquake_makes_news_link_absolute() -> None:
+    """The API returns site-relative news paths, which must not stay relative.
+
+    Rendered as-is in a Lovelace card, a browser resolves "/news/..." against the
+    Home Assistant instance and 404s instead of reaching earthquakelist.org.
+    """
+    item = {"eq": {"id": "1", "news_link": "/news/2025/12/27/m6-6-earthquake-taiwan-1226065/"}}
+
+    earthquake = parse_earthquake(item)
+
+    assert earthquake is not None
+    assert earthquake.news_link == (
+        "https://earthquakelist.org/news/2025/12/27/m6-6-earthquake-taiwan-1226065/"
+    )
+
+
+def test_parse_earthquake_leaves_an_absolute_news_link_untouched() -> None:
+    """Should the API ever return a full URL, it must not be mangled."""
+    item = {"eq": {"id": "1", "news_link": "https://example.com/story"}}
+
+    earthquake = parse_earthquake(item)
+
+    assert earthquake is not None
+    assert earthquake.news_link == "https://example.com/story"
+
+
+def test_parse_earthquake_keeps_news_link_none_when_absent() -> None:
+    """`false` (the API's empty marker) must not become a bare base URL."""
+    assert parse_earthquake({"eq": {"id": "1", "news_link": False}}).news_link is None
+    assert parse_earthquake({"eq": {"id": "2"}}).news_link is None
+
+
 def test_parse_earthquake_defaults_offshore_to_false_when_onshore_or_absent() -> None:
     """A falsy or missing `location_offshore` should not be reported as offshore."""
     onshore = parse_earthquake({"eq": {"id": "1", "location_offshore": "0"}})
