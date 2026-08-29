@@ -73,6 +73,9 @@ class EarthquakeData:
     usgs_code: str | None = None
     news_link: str | None = None
     news_title: str | None = None
+    offshore: bool = False
+    local_timezone: str | None = None
+    local_timezone_short: str | None = None
 
 
 def parse_search_results(data: Any) -> list[SearchResult]:
@@ -159,4 +162,7 @@ def parse_earthquake(item: Any) -> EarthquakeData | None:
         usgs_code=_to_str(eq.get("usgs_code")),
         news_link=_to_str(eq.get("news_link")),
         news_title=_to_str(eq.get("news_title")),
+        offshore=_to_bool(eq.get("location_offshore")),
+        local_timezone=_to_str(eq.get("local_timezone")),
+        local_timezone_short=_to_str(eq.get("local_timezone_short")),
     )

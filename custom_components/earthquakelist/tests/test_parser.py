@@ -85,6 +85,9 @@ def test_parse_earthquakes_from_corfu_fixture() -> None:
     assert earthquake.usgs_code == "us7000sseh"
     assert earthquake.news_link is None
     assert earthquake.news_title is None
+    assert earthquake.offshore is True
+    assert earthquake.local_timezone == "Europe/Athens"
+    assert earthquake.local_timezone_short == "Athens"
 
 
 def test_parse_earthquake_tolerates_malformed_entries() -> None:
@@ -112,3 +115,14 @@ def test_parse_earthquake_reads_true_alert_and_tsunami_flags() -> None:
     assert earthquake is not None
     assert earthquake.alert_level == "orange"
     assert earthquake.alert_tsunami is True
+
+
+def test_parse_earthquake_defaults_offshore_to_false_when_onshore_or_absent() -> None:
+    """A falsy or missing `location_offshore` should not be reported as offshore."""
+    onshore = parse_earthquake({"eq": {"id": "1", "location_offshore": "0"}})
+    missing = parse_earthquake({"eq": {"id": "2"}})
+
+    assert onshore is not None
+    assert onshore.offshore is False
+    assert missing is not None
+    assert missing.offshore is False

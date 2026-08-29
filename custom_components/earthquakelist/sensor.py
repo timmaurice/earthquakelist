@@ -46,6 +46,15 @@ def _earthquake_to_dict(earthquake: EarthquakeData) -> dict[str, object]:
         "direction": earthquake.direction,
         "alert_level": earthquake.alert_level,
         "alert_tsunami": earthquake.alert_tsunami,
+        "mmi": earthquake.mmi,
+        "felt": earthquake.felt,
+        "significance": earthquake.significance,
+        "usgs_code": earthquake.usgs_code,
+        "news_link": earthquake.news_link,
+        "news_title": earthquake.news_title,
+        "offshore": earthquake.offshore,
+        "local_timezone": earthquake.local_timezone,
+        "local_timezone_short": earthquake.local_timezone_short,
     }
 
 
@@ -56,7 +65,10 @@ class EarthquakeListSensorEntityDescription(SensorEntityDescription):
 
 SENSOR_DESCRIPTION = EarthquakeListSensorEntityDescription(
     key="latest_earthquake",
-    name="Latest Earthquake",
+    # `translation_key`, not a hardcoded `name`: a literal name overrides the
+    # `entity.sensor.latest_earthquake.name` string in translations/, so the entity stayed
+    # "Latest Earthquake" even with the UI in another language.
+    translation_key="latest_earthquake",
     icon="mdi:pulse",
     state_class=SensorStateClass.MEASUREMENT,
 )
@@ -126,6 +138,10 @@ class EarthquakeListSensor(CoordinatorEntity, SensorEntity):
             "significance": earthquake.significance,
             "usgs_code": earthquake.usgs_code,
             "news_link": earthquake.news_link,
+            "news_title": earthquake.news_title,
+            "offshore": earthquake.offshore,
+            "local_timezone": earthquake.local_timezone,
+            "local_timezone_short": earthquake.local_timezone_short,
             "monitored_place": self._place_name,
             "min_magnitude": self._entry.options.get(
                 CONF_MIN_MAGNITUDE, self._entry.data.get(CONF_MIN_MAGNITUDE)

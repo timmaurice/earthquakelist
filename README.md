@@ -68,11 +68,27 @@ These filter values can be changed at any time via the integration's **Configure
 
 ## Created Sensors
 
-For each configured location, a device with the following sensor is created (entity ID `sensor.earthquakelist_<location>_latest_earthquake`):
+For each configured location, a device with a single **Latest Earthquake** sensor is created (entity ID `sensor.earthquakelist_<location>_latest_earthquake`). Its state is the magnitude of the latest earthquake matching the configured filter (e.g. `3.5`), with the following attributes:
 
-| Sensor                | Description                                                        | Attributes                                                                                                                                                                                                                                                                                                   | Example Value |
-| :-------------------- | :----------------------------------------------------------------- | :----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | :------------ |
-| **Latest Earthquake** | Magnitude of the latest earthquake matching the configured filter. | `place`, `location`, `time`, `depth_km`, `distance_km`, `direction`, `latitude`, `longitude`, `alert_level`, `alert_tsunami`, `mmi`, `felt`, `significance`, `usgs_code`, `news_link`, `monitored_place`, `min_magnitude`, `max_distance`, `earthquakes` (list of up to 10 recent matches, used by the card) | `3.5`         |
+| Attribute                                 | Description                                                                                                                                                  |
+| :---------------------------------------- | :----------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `place` / `location`                      | Nearest named place, and the API's human-readable location description.                                                                                      |
+| `time`                                    | UTC timestamp of the earthquake.                                                                                                                             |
+| `depth_km`                                | Depth of the earthquake, in kilometers.                                                                                                                      |
+| `distance_km` / `direction`               | Distance and compass direction from the monitored point (e.g. `45`, `N`).                                                                                    |
+| `latitude` / `longitude`                  | Coordinates of the earthquake.                                                                                                                               |
+| `alert_level`                             | USGS PAGER _impact_ level (`green`/`yellow`/`orange`/`red`), if one was issued. Distinct from a tsunami alert; `green` means no significant impact expected. |
+| `alert_tsunami`                           | Whether a tsunami alert was issued.                                                                                                                          |
+| `mmi`                                     | Modified Mercalli Intensity — reported shaking severity, if available.                                                                                       |
+| `felt`                                    | Number of "did you feel it?" reports.                                                                                                                        |
+| `significance`                            | USGS significance score (a rough combined measure of magnitude, impact, and recency).                                                                        |
+| `usgs_code`                               | USGS event reference code.                                                                                                                                   |
+| `news_link` / `news_title`                | Link and headline of related news coverage, if any exists.                                                                                                   |
+| `offshore`                                | Whether the earthquake's epicenter was offshore.                                                                                                             |
+| `local_timezone` / `local_timezone_short` | IANA timezone name and short label (e.g. `Europe/Athens`, `Athens`) for the earthquake's location.                                                           |
+| `monitored_place`                         | Display name of the configured location.                                                                                                                     |
+| `min_magnitude` / `max_distance`          | The currently configured filter values.                                                                                                                      |
+| `earthquakes`                             | List of up to 10 recent matches — powers the Lovelace card's map and list.                                                                                   |
 
 ## Lovelace Card
 
