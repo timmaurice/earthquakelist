@@ -10,7 +10,7 @@
     "max_list_items": "リストの最大件数"
   },
   "card": {
-    "tsunami_alert": "津波警報",
+    "tsunami_alert": "津波の可能性",
     "distance": "距離",
     "depth": "深さ",
     "no_data": "地震データがまだありません",
@@ -24,7 +24,8 @@
     "previous_earthquakes": "以前の地震",
     "alert_yellow": "警戒レベル 黄",
     "alert_orange": "警戒レベル 橙",
-    "alert_red": "警戒レベル 赤"
+    "alert_red": "警戒レベル 赤",
+    "tsunami_hint": "大規模な海域地震。USGS が津波評価の対象として指定 — 確定した警報ではありません"
   },
   "common": {
     "errors": {

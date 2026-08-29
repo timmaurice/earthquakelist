@@ -10,7 +10,7 @@
     "max_list_items": "Max. Listeneinträge"
   },
   "card": {
-    "tsunami_alert": "Tsunami-Warnung",
+    "tsunami_alert": "Tsunami möglich",
     "distance": "Entfernung",
     "depth": "Tiefe",
     "no_data": "Noch keine Erdbebendaten",
@@ -24,7 +24,8 @@
     "previous_earthquakes": "Vorherige Erdbeben",
     "alert_yellow": "Warnstufe Gelb",
     "alert_orange": "Warnstufe Orange",
-    "alert_red": "Warnstufe Rot"
+    "alert_red": "Warnstufe Rot",
+    "tsunami_hint": "Großes Offshore-Beben, von USGS zur Tsunami-Bewertung markiert — keine bestätigte Warnung"
   },
   "common": {
     "errors": {

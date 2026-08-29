@@ -10,7 +10,7 @@
     "max_list_items": "Maks. item daftar"
   },
   "card": {
-    "tsunami_alert": "Peringatan tsunami",
+    "tsunami_alert": "Kemungkinan tsunami",
     "distance": "Jarak",
     "depth": "Kedalaman",
     "no_data": "Belum ada data gempa bumi",
@@ -24,7 +24,8 @@
     "previous_earthquakes": "Gempa Bumi Sebelumnya",
     "alert_yellow": "Peringatan kuning",
     "alert_orange": "Peringatan oranye",
-    "alert_red": "Peringatan merah"
+    "alert_red": "Peringatan merah",
+    "tsunami_hint": "Gempa laut berkekuatan besar, ditandai USGS untuk evaluasi tsunami — bukan peringatan yang dikonfirmasi"
   },
   "common": {
     "errors": {
