@@ -17,7 +17,7 @@ This custom integration for Home Assistant fetches earthquake data directly from
 - **Configurable Filter**: Set a minimum magnitude and maximum distance to determine which earthquakes match.
 - **Detailed Attributes**: Location, time, depth, distance & direction from the monitored point, tsunami alert, felt reports, Mercalli intensity, significance, the USGS reference code, and up to 10 recent matching earthquakes.
 - **Device per Location**: Creates a dedicated device in Home Assistant for each monitored location.
-- **Bundled Lovelace Card**: Magnitude badge, tsunami alert badge, a Leaflet map with magnitude-colored markers, and a recent-earthquakes list — configurable per place via a GUI editor.
+- **Bundled Lovelace Card**: Magnitude badge, tsunami alert badge, a MapLibre GL map with magnitude-colored markers, and a recent-earthquakes list — configurable per place via a GUI editor.
 - **Localization**: Supports English and German out of the box.
 
 ## Localization
@@ -93,7 +93,7 @@ places:
 | ---------------- | ---------- | ------- | ------------------------------------------------------------ |
 | `places`         | `string[]` | —       | Required. One `sensor.earthquakelist_*` entity per place.    |
 | `title`          | `string`   | —       | Optional card title.                                         |
-| `show_map`       | `boolean`  | `true`  | Show the Leaflet map with magnitude-colored markers.         |
+| `show_map`       | `boolean`  | `true`  | Show the MapLibre GL map with magnitude-colored markers.     |
 | `show_list`      | `boolean`  | `true`  | Show the recent-earthquakes list below the map.              |
 | `max_list_items` | `number`   | `5`     | Max. number of entries shown in the recent earthquakes list. |
 
