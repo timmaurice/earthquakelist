@@ -28,6 +28,91 @@
   }
 }
 
+// Popup theme classes are set explicitly in map.ts, not left to inherited HA CSS vars.
+.maplibregl-popup {
+  z-index: 10001; // above markers and controls
+}
+
+.maplibregl-popup-close-button {
+  font-size: 16px;
+}
+
+.popup-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 2px;
+}
+
+.popup-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  font-size: 0.9em;
+
+  ha-icon {
+    --mdc-icon-size: 14px;
+  }
+}
+
+.eq-popup-dark {
+  .maplibregl-popup-content {
+    background: #000;
+    color: #fff;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
+
+    a {
+      color: #8ab4f8;
+    }
+  }
+
+  .maplibregl-popup-close-button {
+    color: #ccc;
+  }
+
+  &.maplibregl-popup-anchor-bottom .maplibregl-popup-tip {
+    border-top-color: #000;
+  }
+  &.maplibregl-popup-anchor-top .maplibregl-popup-tip {
+    border-bottom-color: #000;
+  }
+  &.maplibregl-popup-anchor-left .maplibregl-popup-tip {
+    border-right-color: #000;
+  }
+  &.maplibregl-popup-anchor-right .maplibregl-popup-tip {
+    border-left-color: #000;
+  }
+}
+
+.eq-popup-light {
+  .maplibregl-popup-content {
+    background: #fff;
+    color: #1a1a1a;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+
+    a {
+      color: #0b57d0;
+    }
+  }
+
+  .maplibregl-popup-close-button {
+    color: #555;
+  }
+
+  &.maplibregl-popup-anchor-bottom .maplibregl-popup-tip {
+    border-top-color: #fff;
+  }
+  &.maplibregl-popup-anchor-top .maplibregl-popup-tip {
+    border-bottom-color: #fff;
+  }
+  &.maplibregl-popup-anchor-left .maplibregl-popup-tip {
+    border-right-color: #fff;
+  }
+  &.maplibregl-popup-anchor-right .maplibregl-popup-tip {
+    border-left-color: #fff;
+  }
+}
+
 .eq-marker {
   align-items: center;
   border: 2px solid white;
@@ -61,10 +146,12 @@
   animation: pulse 1.8s ease-out infinite;
 }
 
-// MapLibre's control container and marker layer are plain unpositioned siblings, so a
-// marker could otherwise paint over the controls.
-.maplibregl-control-container {
-  position: relative;
+// Raises controls above markers instead of via `.maplibregl-control-container { position: relative }`,
+// which would break its zero-height children's bottom/top anchoring.
+.maplibregl-ctrl-top-left,
+.maplibregl-ctrl-top-right,
+.maplibregl-ctrl-bottom-left,
+.maplibregl-ctrl-bottom-right {
   z-index: 10000;
 }
 
@@ -74,8 +161,11 @@
   overflow: hidden;
 }
 
+// Brand green instead of HA's theme --primary-color.
 .maplibregl-ctrl-group a.recenter-button {
   align-items: center;
+  background-color: color-mix(in srgb, var(--eq-brand-green, #6b8d63) 15%, transparent);
+  color: var(--eq-brand-green, #6b8d63);
   cursor: pointer;
   display: flex;
   height: 29px;
@@ -83,7 +173,7 @@
   width: 29px;
 
   &.active {
-    background-color: var(--primary-color);
+    background-color: var(--eq-brand-green, #6b8d63);
     color: white;
   }
 }

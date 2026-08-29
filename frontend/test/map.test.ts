@@ -77,6 +77,7 @@ const { maplibreMock, mapInstanceMock } = vi.hoisted(() => {
     addControl: vi.fn(),
     on: vi.fn(),
     getContainer: vi.fn(() => document.createElement('div')),
+    off: vi.fn(),
     resize: vi.fn(),
     remove: vi.fn(),
     fitBounds: vi.fn(),
@@ -98,9 +99,19 @@ const { maplibreMock, mapInstanceMock } = vi.hoisted(() => {
       return createMarkerInstanceMock(options?.element ?? document.createElement('div'));
     }),
     Popup: vi.fn().mockImplementation(function () {
-      return { setHTML: vi.fn().mockReturnThis() };
+      const popup = {
+        html: '',
+        setHTML: vi.fn(function (this: { html: string }, html: string) {
+          this.html = html;
+          return popup;
+        }),
+      };
+      return popup;
     }),
     NavigationControl: vi.fn().mockImplementation(function () {
+      return { onAdd: () => document.createElement('div') };
+    }),
+    AttributionControl: vi.fn().mockImplementation(function () {
       return { onAdd: () => document.createElement('div') };
     }),
     LngLatBounds: MockLngLatBounds,
@@ -186,7 +197,21 @@ describe('EarthquakeListMap', () => {
     const recenter = el.shadowRoot?.querySelector('a.recenter-button');
     expect(recenter).not.toBeNull();
     expect(recenter?.getAttribute('role')).toBe('button');
-    expect(recenter?.getAttribute('aria-label')).toBe('Recenter map');
+    // Localized, not hardcoded — makeHass() reports language 'en'.
+    expect(recenter?.getAttribute('aria-label')).toBe('Recenter map and enable auto-zoom');
+  });
+
+  it('localizes the recenter control instead of hardcoding English', async () => {
+    const el = new EarthquakeListMap();
+    el.hass = { ...makeHass(), language: 'de' } as HomeAssistant;
+    el.earthquakes = [makeQuake()];
+    document.body.appendChild(el);
+    await waitForMap(el);
+
+    const recenter = el.shadowRoot?.querySelector('a.recenter-button') as HTMLAnchorElement;
+    expect(recenter.getAttribute('aria-label')).toBe('Karte neu zentrieren und Auto-Zoom aktivieren');
+    // Auto-zoom is on initially, so the tooltip reports that state.
+    expect(recenter.title).toBe('Auto-Zoom aktiv');
   });
 
   it('re-enables auto-fit when the recenter control is clicked', async () => {
@@ -214,5 +239,40 @@ describe('EarthquakeListMap', () => {
     el.remove();
 
     expect((el as unknown as { _map: unknown })._map).toBeUndefined();
+  });
+
+  it('includes offshore, felt-report and news-link info in the popup HTML', async () => {
+    const el = new EarthquakeListMap();
+    el.hass = makeHass();
+    el.earthquakes = [
+      makeQuake({
+        offshore: true,
+        felt: 312,
+        news_link: 'https://example.com/article',
+        news_title: 'Strong quake felt across the region',
+      }),
+    ];
+    document.body.appendChild(el);
+    await waitForMap(el);
+
+    const popupCall = maplibreMock.Popup.mock.results.at(-1);
+    const html = popupCall?.value.html as string;
+    expect(html).toContain('Offshore');
+    expect(html).toContain('Felt by 312');
+    expect(html).toContain('href="https://example.com/article"');
+    expect(html).toContain('Strong quake felt across the region');
+  });
+
+  it('does not link an unsafe news_link scheme into the popup', async () => {
+    const el = new EarthquakeListMap();
+    el.hass = makeHass();
+    el.earthquakes = [makeQuake({ news_link: 'javascript:alert(1)', news_title: 'evil' })];
+    document.body.appendChild(el);
+    await waitForMap(el);
+
+    const popupCall = maplibreMock.Popup.mock.results.at(-1);
+    const html = popupCall?.value.html as string;
+    expect(html).not.toContain('javascript:');
+    expect(html).not.toContain('<a ');
   });
 });
