@@ -39,6 +39,15 @@ export interface EarthquakeListItem {
   direction?: string;
   alert_level?: string;
   alert_tsunami?: boolean;
+  mmi?: number;
+  felt?: number;
+  significance?: number;
+  usgs_code?: string;
+  news_link?: string;
+  news_title?: string;
+  offshore?: boolean;
+  local_timezone?: string;
+  local_timezone_short?: string;
 }
 
 export interface EarthquakeSensorAttributes {
@@ -58,6 +67,10 @@ export interface EarthquakeSensorAttributes {
   significance?: number;
   usgs_code?: string;
   news_link?: string;
+  news_title?: string;
+  offshore?: boolean;
+  local_timezone?: string;
+  local_timezone_short?: string;
   monitored_place?: string;
   min_magnitude?: number;
   max_distance?: number;
