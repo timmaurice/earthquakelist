@@ -7,7 +7,8 @@
     "places": "Orte",
     "show_map": "Karte anzeigen",
     "show_list": "Liste vorheriger Erdbeben anzeigen",
-    "max_list_items": "Max. Listeneinträge"
+    "max_list_items": "Max. Listeneinträge",
+    "max_map_markers": "Max. Kartenmarker"
   },
   "card": {
     "tsunami_alert": "Tsunami möglich",

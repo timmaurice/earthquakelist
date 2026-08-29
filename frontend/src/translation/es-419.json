@@ -7,7 +7,8 @@
     "places": "Ubicaciones",
     "show_map": "Mostrar mapa",
     "show_list": "Mostrar lista de sismos anteriores",
-    "max_list_items": "Máx. elementos de la lista"
+    "max_list_items": "Máx. elementos de la lista",
+    "max_map_markers": "Máx. marcadores del mapa"
   },
   "card": {
     "tsunami_alert": "Posible tsunami",

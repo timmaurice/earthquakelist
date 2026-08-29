@@ -7,7 +7,8 @@
     "places": "Lokasi",
     "show_map": "Tampilkan peta",
     "show_list": "Tampilkan daftar gempa bumi sebelumnya",
-    "max_list_items": "Maks. item daftar"
+    "max_list_items": "Maks. item daftar",
+    "max_map_markers": "Maks. penanda peta"
   },
   "card": {
     "tsunami_alert": "Kemungkinan tsunami",
