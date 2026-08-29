@@ -1,22 +1,67 @@
 import { LitElement, html } from 'lit';
 import { property } from 'lit/decorators.js';
-import type { Map as LeafletMap, LayerGroup, DivIcon, Marker, LatLngBounds } from 'leaflet';
-import leafletCss from 'leaflet/dist/leaflet.css';
-import leafletStyles from '../styles/leaflet-styles.scss';
+import type { Map as MapLibreMap, Marker, LngLatBounds, IControl } from 'maplibre-gl';
+import maplibreCss from 'maplibre-gl/dist/maplibre-gl.css';
+import mapStyles from '../styles/map-styles.scss';
 import { EarthquakeListItem, HomeAssistant } from '../types';
 import { magnitudeSeverity } from '../utils';
+
+/**
+ * Custom top-left control that lets the user re-enable auto-zoom after they've
+ * manually panned/zoomed the map. Mirrors MapLibre's own control chrome
+ * (`maplibregl-ctrl`/`maplibregl-ctrl-group`) so it visually matches the built-in
+ * zoom control it's stacked beneath.
+ */
+class RecenterControl implements IControl {
+  private _container: HTMLElement | undefined;
+  private _link: HTMLAnchorElement | undefined;
+
+  constructor(private readonly onClick: () => void) {}
+
+  onAdd(): HTMLElement {
+    const container = document.createElement('div');
+    container.className = 'maplibregl-ctrl maplibregl-ctrl-group';
+
+    const link = document.createElement('a');
+    link.className = 'recenter-button';
+    link.href = '#';
+    link.innerHTML = `<ha-icon icon="mdi:crosshairs-gps"></ha-icon>`;
+    link.setAttribute('role', 'button');
+    link.setAttribute('aria-label', 'Recenter map');
+    link.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      this.onClick();
+    });
+
+    container.appendChild(link);
+    this._container = container;
+    this._link = link;
+    return container;
+  }
+
+  onRemove(): void {
+    this._container?.remove();
+  }
+
+  getLink(): HTMLAnchorElement | undefined {
+    return this._link;
+  }
+}
 
 export class EarthquakeListMap extends LitElement {
   @property({ attribute: false }) public hass!: HomeAssistant;
   @property({ attribute: false }) public earthquakes: EarthquakeListItem[] = [];
 
-  private _map: LeafletMap | undefined = undefined;
-  private _markers: LayerGroup | undefined = undefined;
+  private _map: MapLibreMap | undefined = undefined;
   private _quakeMarkers: Map<string, Marker> = new Map();
-  private _leaflet: typeof import('leaflet') | undefined;
+  private _maplibregl: typeof import('maplibre-gl') | undefined;
   private _resizeObserver: ResizeObserver | null = null;
   private _isInitializingMap = false;
   private _userInteractedWithMap = false;
+  private _recenterButton: HTMLAnchorElement | undefined;
+  private _programmaticMapChange = false;
+  private _programmaticChangeSettleTimer: number | undefined;
 
   connectedCallback(): void {
     super.connectedCallback();
@@ -39,17 +84,51 @@ export class EarthquakeListMap extends LitElement {
     }
   }
 
-  private async _getLeaflet() {
-    if (!this._leaflet) {
-      const L = (await import('leaflet')) as typeof import('leaflet') & { noConflict?: () => typeof import('leaflet') };
-      this._leaflet = typeof L.noConflict === 'function' ? L.noConflict() : L;
+  private async _getMapLibre() {
+    if (!this._maplibregl) {
+      // maplibre-gl is pinned to v5 (see package.json): its dist/maplibre-gl.js is a
+      // self-contained build that constructs its Web Worker from an inline Blob
+      // automatically, no manual setWorkerUrl() wiring needed. v6 dropped that in favor of
+      // a separately-hosted worker file, which doesn't fit this project's single-file
+      // bundle — don't bump past v5 without re-solving that.
+      this._maplibregl = await import('maplibre-gl');
     }
-    return this._leaflet!;
+    return this._maplibregl!;
   }
 
   private _markerKey(eq: EarthquakeListItem): string {
     return eq.id ?? `${eq.latitude},${eq.longitude},${eq.time}`;
   }
+
+  // Marks the next camera movement(s) as programmatic rather than user-initiated, so the
+  // zoomstart/movestart/dragstart listeners below don't mistake them for real interaction and
+  // disable auto-zoom. Used both for our own fitBounds/jumpTo calls and for `_map.resize()` —
+  // MapLibre can reposition the camera during a resize (e.g. on first layout, or whenever the
+  // card's container size settles inside HA's grid), and that's just as capable of firing
+  // move events as an explicit zoom.
+  private _beginProgrammaticMapChange(): void {
+    if (!this._map) return;
+    this._programmaticMapChange = true;
+    this._map.getContainer().classList.add('interaction-disabled');
+    this._scheduleProgrammaticMapChangeClear();
+  }
+
+  private _scheduleProgrammaticMapChangeClear(): void {
+    if (this._programmaticChangeSettleTimer) {
+      window.clearTimeout(this._programmaticChangeSettleTimer);
+    }
+    this._programmaticChangeSettleTimer = window.setTimeout(() => {
+      this._programmaticChangeSettleTimer = undefined;
+      this._programmaticMapChange = false;
+      this._map?.getContainer().classList.remove('interaction-disabled');
+    }, 150);
+  }
+
+  private _handleMapMoveEnd = (): void => {
+    if (this._programmaticMapChange) {
+      this._scheduleProgrammaticMapChangeClear();
+    }
+  };
 
   private async _initMap(): Promise<void> {
     const mapContainer = this.shadowRoot?.querySelector('#map-container');
@@ -65,53 +144,59 @@ export class EarthquakeListMap extends LitElement {
     this._isInitializingMap = true;
 
     try {
-      const L = await this._getLeaflet();
+      const maplibregl = await this._getMapLibre();
       if (!this.isConnected || this._map) return;
 
+      const currentContainer = this.shadowRoot?.querySelector('#map-container');
+      if (!currentContainer || currentContainer !== mapContainer) return;
+
       const darkMode = this.hass?.themes?.darkMode ?? false;
-      const tileUrl = darkMode
-        ? 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png'
-        : 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png';
+      const styleUrl = darkMode
+        ? 'https://tiles.openfreemap.org/styles/dark'
+        : 'https://tiles.openfreemap.org/styles/positron';
 
-      this._map = L.map(mapContainer, { zoomControl: true });
-      L.tileLayer(tileUrl, {
-        attribution:
-          '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
-        maxZoom: 19,
-      }).addTo(this._map);
-
-      this._markers = L.layerGroup().addTo(this._map);
-
-      this._map.on('zoomstart movestart dragstart', () => {
-        this._userInteractedWithMap = true;
+      this._map = new maplibregl.Map({
+        container: mapContainer,
+        style: styleUrl,
+        center: [0, 0],
+        zoom: 0,
       });
 
-      const recenterControl = L.Control.extend({
-        options: { position: 'topleft' },
-        onAdd: () => {
-          const container = L.DomUtil.create('div', 'leaflet-bar leaflet-control');
-          const link = L.DomUtil.create('a', 'recenter-button', container);
-          link.innerHTML = `<ha-icon icon="mdi:crosshairs-gps"></ha-icon>`;
-          link.href = '#';
-          link.title = 'Recenter map';
-          link.setAttribute('role', 'button');
-          link.setAttribute('aria-label', 'Recenter map');
-          L.DomEvent.on(link, 'click', L.DomEvent.stop).on(link, 'click', () => {
-            this._userInteractedWithMap = false;
-            this._updateMapMarkers();
-          });
-          return container;
-        },
+      this._map.addControl(new maplibregl.NavigationControl({ showCompass: false }), 'top-left');
+
+      const markUserInteracted = () => {
+        if (!this._programmaticMapChange) {
+          this._userInteractedWithMap = true;
+          this._updateRecenterButtonState();
+        }
+      };
+      this._map.on('zoomstart', markUserInteracted);
+      this._map.on('movestart', markUserInteracted);
+      this._map.on('dragstart', markUserInteracted);
+      this._map.on('moveend', this._handleMapMoveEnd);
+
+      const recenterControl = new RecenterControl(() => {
+        this._userInteractedWithMap = false;
+        this._updateMapMarkers();
+        this._updateRecenterButtonState();
       });
-      this._map.addControl(new recenterControl());
+      this._map.addControl(recenterControl, 'top-left');
+      this._recenterButton = recenterControl.getLink();
 
       if (typeof ResizeObserver !== 'undefined') {
-        this._resizeObserver = new ResizeObserver(() => this._map?.invalidateSize());
+        this._resizeObserver = new ResizeObserver(() => {
+          if (this._map) {
+            this._beginProgrammaticMapChange();
+            this._map.resize();
+          }
+        });
         this._resizeObserver.observe(mapContainer);
       }
 
-      this._map.invalidateSize();
+      this._beginProgrammaticMapChange();
+      this._map.resize();
       this._updateMapMarkers();
+      this._updateRecenterButtonState();
     } catch (err) {
       console.error('[EarthquakeList Map] Failed to initialize map:', err);
     } finally {
@@ -121,40 +206,38 @@ export class EarthquakeListMap extends LitElement {
 
   private async _updateMapMarkers(): Promise<void> {
     if (!this._map) return;
-    const L = await this._getLeaflet();
+    const maplibregl = await this._getMapLibre();
     if (!this._map || !this.isConnected) return;
 
-    if (!this._markers) {
-      this._markers = L.layerGroup().addTo(this._map);
-    }
-
-    const bounds = L.latLngBounds([]);
+    const bounds = new maplibregl.LngLatBounds();
     const seenKeys = new Set<string>();
 
     this.earthquakes.forEach((eq, index) => {
       if (eq.latitude === undefined || eq.longitude === undefined) return;
       const key = this._markerKey(eq);
       seenKeys.add(key);
-      bounds.extend([eq.latitude, eq.longitude]);
+      bounds.extend([eq.longitude, eq.latitude]);
 
       const severity = magnitudeSeverity(eq.magnitude);
       const size = 18 + Math.round((eq.magnitude ?? 3) * 2);
       const isLatest = index === 0;
 
       if (!this._quakeMarkers.has(key)) {
-        const icon: DivIcon = L.divIcon({
-          html: `<div class="leaflet-eq-marker ${severity}" style="width:${size}px;height:${size}px;">${
-            eq.magnitude !== undefined ? eq.magnitude.toFixed(1) : ''
-          }</div>`,
-          className: `leaflet-eq-marker-wrapper${isLatest ? ' latest' : ''}`,
-          iconSize: [size, size],
-          iconAnchor: [size / 2, size / 2],
-        });
-        const marker = L.marker([eq.latitude, eq.longitude], { icon }).addTo(this._markers!);
+        const wrapper = document.createElement('div');
+        wrapper.className = `eq-marker-wrapper${isLatest ? ' latest' : ''}`;
+        wrapper.innerHTML = `<div class="eq-marker ${severity}" style="width:${size}px;height:${size}px;">${
+          eq.magnitude !== undefined ? eq.magnitude.toFixed(1) : ''
+        }</div>`;
+
         const time = eq.time ? new Date(eq.time).toLocaleString(this.hass?.language) : '';
-        marker.bindPopup(
+        const popup = new maplibregl.Popup({ offset: size / 2 + 4 }).setHTML(
           `<strong>M${eq.magnitude?.toFixed(1) ?? '?'}</strong> ${eq.place ?? eq.location ?? ''}<br>${time}`,
         );
+
+        const marker = new maplibregl.Marker({ element: wrapper })
+          .setLngLat([eq.longitude, eq.latitude])
+          .setPopup(popup)
+          .addTo(this._map!);
         this._quakeMarkers.set(key, marker);
       }
     });
@@ -162,7 +245,7 @@ export class EarthquakeListMap extends LitElement {
     // Remove markers that are no longer in the list
     this._quakeMarkers.forEach((marker, key) => {
       if (!seenKeys.has(key)) {
-        this._markers?.removeLayer(marker);
+        marker.remove();
         this._quakeMarkers.delete(key);
       }
     });
@@ -170,14 +253,43 @@ export class EarthquakeListMap extends LitElement {
     this._autoZoom(bounds);
   }
 
-  private _autoZoom(bounds: LatLngBounds): void {
-    if (!this._map || this._userInteractedWithMap || !bounds.isValid()) return;
-    this._map.fitBounds(bounds, { padding: [30, 30], maxZoom: 12 });
+  private _autoZoom(bounds: LngLatBounds): void {
+    if (!this._map || this._userInteractedWithMap || bounds.isEmpty()) return;
+
+    const northEast = bounds.getNorthEast();
+    const southWest = bounds.getSouthWest();
+    const isRealBounds = northEast.lng !== southWest.lng || northEast.lat !== southWest.lat;
+
+    this._beginProgrammaticMapChange();
+    if (isRealBounds) {
+      this._map.fitBounds(bounds, { padding: 30, maxZoom: 12 });
+    } else {
+      this._map.jumpTo({ center: northEast, zoom: Math.max(this._map.getZoom(), 8) });
+    }
+  }
+
+  private _updateRecenterButtonState(): void {
+    if (!this._recenterButton) return;
+
+    if (this._userInteractedWithMap) {
+      this._recenterButton.classList.remove('active');
+      this._recenterButton.setAttribute('aria-label', 'Recenter map and enable auto-zoom');
+    } else {
+      this._recenterButton.classList.add('active');
+      this._recenterButton.title = 'Auto-zoom enabled';
+    }
   }
 
   private _destroyMap(): void {
-    this._resizeObserver?.disconnect();
-    this._resizeObserver = null;
+    if (this._resizeObserver) {
+      this._resizeObserver.disconnect();
+      this._resizeObserver = null;
+    }
+    if (this._programmaticChangeSettleTimer) {
+      window.clearTimeout(this._programmaticChangeSettleTimer);
+      this._programmaticChangeSettleTimer = undefined;
+    }
+    this._programmaticMapChange = false;
     if (this._map) {
       try {
         this._map.remove();
@@ -185,17 +297,17 @@ export class EarthquakeListMap extends LitElement {
         console.warn('[EarthquakeList Map] Error removing map:', err);
       }
       this._map = undefined;
-      this._markers = undefined;
       this._quakeMarkers.clear();
+      this._recenterButton = undefined;
       this._userInteractedWithMap = false;
     }
   }
 
   protected render() {
-    return html`<div id="map-container" class="leaflet-map"></div>`;
+    return html`<div id="map-container" class="map-container"></div>`;
   }
 
-  static styles = [leafletCss, leafletStyles];
+  static styles = [maplibreCss, mapStyles];
 }
 
 customElements.define('earthquakelist-map', EarthquakeListMap);
