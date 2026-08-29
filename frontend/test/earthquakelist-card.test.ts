@@ -329,7 +329,12 @@ describe('EarthquakeListCard', () => {
     const link = card.shadowRoot?.querySelector('a.news-link') as HTMLAnchorElement | null;
     expect(link).not.toBeNull();
     expect(link?.getAttribute('href')).toBe('https://example.com/article');
-    expect(link?.textContent).toContain('Major earthquake strikes Naha');
+    expect(link?.getAttribute('target')).toBe('_blank');
+    expect(link?.getAttribute('rel')).toBe('noopener noreferrer');
+    // The headline only restates the row's own magnitude and place, so it is the tooltip
+    // and the link text stays short.
+    expect(link?.textContent?.trim()).toBe('Read more');
+    expect(link?.getAttribute('title')).toBe('Major earthquake strikes Naha');
   });
 
   it('does not render a news link when news_link is absent', async () => {

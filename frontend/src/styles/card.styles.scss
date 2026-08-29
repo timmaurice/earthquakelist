@@ -200,10 +200,8 @@
   font-size: 0.85em;
   color: var(--primary-color);
   text-decoration: none;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
   max-width: 100%;
+  min-width: 0;
 
   &:hover {
     text-decoration: underline;
@@ -213,6 +211,13 @@
     flex: 0 0 auto;
     --mdc-icon-size: 16px;
   }
+}
+
+.news-link-text {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .map-wrapper {
