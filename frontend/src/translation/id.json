@@ -15,6 +15,9 @@
     "distance": "Jarak",
     "depth": "Kedalaman",
     "no_data": "Belum ada data gempa bumi",
+    "entity_not_found": "Entitas {entity} tidak ditemukan",
+    "entity_unavailable": "Sensor tidak tersedia — tidak ada data dari earthquakelist.org",
+    "no_places_configured": "Pilih setidaknya satu lokasi di editor kartu.",
     "offshore": "Lepas pantai",
     "felt_reports": "Dirasakan oleh {count}",
     "read_more": "Selengkapnya",
@@ -30,7 +33,8 @@
   },
   "common": {
     "errors": {
-      "no_places": "Anda harus menentukan setidaknya satu lokasi."
+      "no_places": "Anda harus menentukan setidaknya satu lokasi.",
+      "invalid_entity": "{entity} bukan entitas sensor."
     }
   }
 }

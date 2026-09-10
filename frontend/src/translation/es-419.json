@@ -15,6 +15,9 @@
     "distance": "Distancia",
     "depth": "Profundidad",
     "no_data": "Aún no hay datos de sismos",
+    "entity_not_found": "No se encontró la entidad {entity}",
+    "entity_unavailable": "Sensor no disponible — sin datos de earthquakelist.org",
+    "no_places_configured": "Elige al menos una ubicación en el editor de la tarjeta.",
     "offshore": "Mar adentro",
     "felt_reports": "Sentido por {count}",
     "read_more": "Leer más",
@@ -30,7 +33,8 @@
   },
   "common": {
     "errors": {
-      "no_places": "Debes definir al menos una ubicación."
+      "no_places": "Debes definir al menos una ubicación.",
+      "invalid_entity": "{entity} no es una entidad de tipo sensor."
     }
   }
 }

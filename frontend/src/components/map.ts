@@ -4,7 +4,7 @@ import type { Map as MapLibreMap, Marker, LngLatBounds, IControl } from 'maplibr
 import maplibreCss from 'maplibre-gl/dist/maplibre-gl.css';
 import mapStyles from '../styles/map-styles.scss';
 import { EarthquakeListItem, HomeAssistant } from '../types';
-import { magnitudeSeverity } from '../utils';
+import { isSafeUrl, magnitudeSeverity } from '../utils';
 import { localize } from '../localize';
 
 // Re-enables auto-zoom after the user manually pans/zooms.
@@ -157,7 +157,7 @@ export class EarthquakeListMap extends LitElement {
     }
     if (chips.length) blocks.push(`<div class="popup-chips">${chips.join('')}</div>`);
 
-    if (eq.news_link && /^https?:\/\//i.test(eq.news_link)) {
+    if (isSafeUrl(eq.news_link)) {
       const href = this._escapeHtml(eq.news_link);
       // The headline goes in the tooltip, not the link text: in a popup this narrow a real
       // headline wraps to three lines and dominates everything else.
