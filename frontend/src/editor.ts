@@ -1,5 +1,5 @@
 import { LitElement, html, css, TemplateResult, unsafeCSS } from 'lit';
-import { customElement, property, state } from 'lit/decorators.js';
+import { property, state } from 'lit/decorators.js';
 import { EarthquakeListCardConfig, HomeAssistant, LovelaceCardEditor } from './types';
 import { localize } from './localize';
 import { fireEvent } from './utils';
@@ -31,7 +31,6 @@ function displaySchema(showMap: boolean, showList: boolean): HaFormSchema[] {
   ];
 }
 
-@customElement('earthquakelist-card-editor')
 export class EarthquakeListCardEditor extends LitElement implements LovelaceCardEditor {
   @property({ attribute: false }) public hass!: HomeAssistant;
   @state() private _config!: EarthquakeListCardConfig;
@@ -88,6 +87,14 @@ export class EarthquakeListCardEditor extends LitElement implements LovelaceCard
   static styles = css`
     ${unsafeCSS(editorStyles)}
   `;
+}
+
+const ELEMENT_NAME = 'earthquakelist-card-editor';
+
+// Registered by hand instead of through @customElement: the decorator throws
+// when a second copy of this bundle has already claimed the name.
+if (!customElements.get(ELEMENT_NAME)) {
+  customElements.define(ELEMENT_NAME, EarthquakeListCardEditor);
 }
 
 declare global {
