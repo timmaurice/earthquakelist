@@ -30,11 +30,5 @@
     "alert_orange": "Warnstufe Orange",
     "alert_red": "Warnstufe Rot",
     "tsunami_hint": "Großes Offshore-Beben, von USGS zur Tsunami-Bewertung markiert — keine bestätigte Warnung"
-  },
-  "common": {
-    "errors": {
-      "no_places": "Du musst mindestens einen Ort festlegen.",
-      "invalid_entity": "{entity} ist keine Sensor-Entität."
-    }
   }
 }

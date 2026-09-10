@@ -51,16 +51,19 @@ export class EarthquakeListCard extends LitElement implements LovelaceCard {
     return { type: `custom:${ELEMENT_NAME}`, places: place ? [place] : [] };
   }
 
+  // Deliberately English literals, not localize(): Home Assistant calls setConfig before
+  // it ever assigns hass, so there is no language to translate into and localize() only
+  // ever returned English here anyway. Translations for these would be dead weight.
   public setConfig(config: EarthquakeListCardConfig): void {
     if (!config.places || !Array.isArray(config.places)) {
-      throw new Error(localize(undefined, 'common.errors.no_places'));
+      throw new Error('You need to define at least one place.');
     }
     // A non-sensor entity would silently render as "no data yet" forever, so reject it
     // as the config error it is. An empty list is not an error: that is the picker's
     // stub config, and the card shows a hint for it instead.
     const wrongDomain = config.places.filter(Boolean).find((entityId) => !entityId.startsWith('sensor.'));
     if (wrongDomain) {
-      throw new Error(localize(undefined, 'common.errors.invalid_entity', { entity: wrongDomain }));
+      throw new Error(`${wrongDomain} is not a sensor entity.`);
     }
     this._config = {
       ...CARD_DEFAULTS,

@@ -30,11 +30,5 @@
     "alert_orange": "Orange alert",
     "alert_red": "Red alert",
     "tsunami_hint": "Large offshore earthquake, flagged by USGS for tsunami evaluation — not a confirmed warning"
-  },
-  "common": {
-    "errors": {
-      "no_places": "You need to define at least one place.",
-      "invalid_entity": "{entity} is not a sensor entity."
-    }
   }
 }

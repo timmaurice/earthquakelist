@@ -30,11 +30,5 @@
     "alert_orange": "警戒レベル 橙",
     "alert_red": "警戒レベル 赤",
     "tsunami_hint": "大規模な海域地震。USGS が津波評価の対象として指定 — 確定した警報ではありません"
-  },
-  "common": {
-    "errors": {
-      "no_places": "少なくとも1つの地域を指定してください。",
-      "invalid_entity": "{entity} はセンサーエンティティではありません。"
-    }
   }
 }

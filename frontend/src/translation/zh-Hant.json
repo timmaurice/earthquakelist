@@ -30,11 +30,5 @@
     "alert_orange": "橙色警報",
     "alert_red": "紅色警報",
     "tsunami_hint": "大規模海域地震，USGS 標記為需評估海嘯 — 並非已確認的警報"
-  },
-  "common": {
-    "errors": {
-      "no_places": "您需要至少定義一個地點。",
-      "invalid_entity": "{entity} 不是感測器實體。"
-    }
   }
 }
