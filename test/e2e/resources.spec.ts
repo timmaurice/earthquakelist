@@ -13,10 +13,7 @@ test.describe('Lovelace resource registration', () => {
     expect(ours[0].url).toMatch(/^\/earthquakelist_frontend\/earthquakelist-card\.js\?v=/);
   });
 
-  test('serves the bundle and defines its elements without a clash', async ({
-    page,
-    consoleErrors,
-  }) => {
+  test('serves the bundle and defines its elements without a clash', async ({ page, consoleErrors }) => {
     const urlPath = await useDashboard('resources', {
       views: [{ title: 'Empty', cards: [] }],
     });
@@ -25,9 +22,7 @@ test.describe('Lovelace resource registration', () => {
     await page.waitForFunction(() => customElements.get('earthquakelist-card') !== undefined, {
       timeout: 60_000,
     });
-    await expect
-      .poll(() => page.evaluate(() => !!customElements.get('earthquakelist-map')))
-      .toBe(true);
+    await expect.poll(() => page.evaluate(() => !!customElements.get('earthquakelist-map'))).toBe(true);
 
     // A bundle loaded twice used to throw on the second define().
     expect(consoleErrors.filter((text) => /has already been used/i.test(text))).toEqual([]);

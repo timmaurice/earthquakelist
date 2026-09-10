@@ -5,6 +5,7 @@ import {
   USERNAME,
   ensureRunning,
   saveTokens,
+  waitForCoreRunning,
   waitForFrontend,
 } from './helpers/homeassistant';
 
@@ -41,6 +42,9 @@ export default async function globalSetup(): Promise<void> {
     );
     saveTokens(await tokens.jsonValue());
     await page.context().storageState({ path: 'test/e2e/.storage-state.json' });
+    // Only now can the websocket be used, and only now is it safe to assert on
+    // anything that setup registers at startup.
+    await waitForCoreRunning();
   } finally {
     await browser.close();
   }

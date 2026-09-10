@@ -17,3 +17,7 @@ config
 venv
 .env
 env
+test/e2e/.auth.json
+test/e2e/.storage-state.json
+test-results/
+playwright-report/

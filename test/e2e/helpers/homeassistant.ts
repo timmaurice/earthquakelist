@@ -49,6 +49,30 @@ export async function waitForFrontend(timeoutMs = 180_000): Promise<void> {
   throw new Error(`Home Assistant did not answer at ${BASE_URL} within ${timeoutMs}ms`);
 }
 
+/**
+ * Waits until the core is actually running, not merely answering HTTP.
+ *
+ * The card resource is registered on EVENT_HOMEASSISTANT_STARTED, which lands
+ * well after the HTTP server starts serving. A check that stops at the frontend
+ * can therefore read the previous run's resource store and pass against code
+ * that is genuinely broken.
+ */
+export async function waitForCoreRunning(timeoutMs = 180_000): Promise<void> {
+  const deadline = Date.now() + timeoutMs;
+  let lastState = 'unknown';
+  while (Date.now() < deadline) {
+    try {
+      const config = await callWebsocket<{ state: string }>({ type: 'get_config' });
+      lastState = config.state;
+      if (config.state === 'RUNNING') return;
+    } catch {
+      // websocket not ready yet
+    }
+    await new Promise((r) => setTimeout(r, 2000));
+  }
+  throw new Error(`Home Assistant never reached RUNNING (last saw ${lastState})`);
+}
+
 export interface Tokens {
   access_token: string;
 }
