@@ -183,3 +183,27 @@ async def test_get_earthquakes_raises_when_the_api_reports_failure(mock_hass) ->
     with _patch_session({"success": False}):
         with pytest.raises(EarthquakeListApiError):
             await api.get_earthquakes("place", "2042", 3.0, 50)
+
+
+async def test_get_earthquakes_raises_when_the_body_is_not_json(mock_hass) -> None:
+    """An HTML error page served with a 200 is a failed fetch, not a crash.
+
+    response.json() raises a JSONDecodeError, which is a ValueError and not an
+    aiohttp.ClientError, so without its own except it escaped _request unwrapped.
+    """
+    api = EarthquakeListAPI(mock_hass)
+
+    mock_response = AsyncMock()
+    mock_response.json.side_effect = json.JSONDecodeError(
+        "Expecting value", "<html>", 0
+    )
+    mock_response.raise_for_status = MagicMock()
+    mock_session = MagicMock()
+    mock_session.get.return_value.__aenter__.return_value = mock_response
+
+    with patch(
+        "custom_components.earthquakelist.api.async_get_clientsession",
+        return_value=mock_session,
+    ):
+        with pytest.raises(EarthquakeListApiError, match="Malformed response"):
+            await api.get_earthquakes("place", "2042", 3.0, 50)

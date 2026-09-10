@@ -108,6 +108,13 @@ class EarthquakeListAPI:
             raise EarthquakeListApiError(
                 f"Error communicating with earthquakelist.org: {err}"
             ) from err
+        except ValueError as err:
+            # A proxy or an outage page answers 200 with HTML. json() then raises
+            # a JSONDecodeError (a ValueError), which is not a ClientError, so it
+            # used to escape unwrapped and reach the coordinator as a crash.
+            raise EarthquakeListApiError(
+                f"Malformed response from earthquakelist.org: {err}"
+            ) from err
 
         if not isinstance(data, dict) or not data.get("success"):
             _LOGGER.debug("Unexpected earthquakelist.org response: %s", data)
