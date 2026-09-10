@@ -3,6 +3,7 @@ import { property, state } from 'lit/decorators.js';
 import { EarthquakeListCardConfig, HomeAssistant, LovelaceCardEditor } from './types';
 import { localize } from './localize';
 import { fireEvent } from './utils';
+import { CARD_DEFAULTS, MAX_MAP_MARKERS_LIMIT } from './defaults';
 import editorStyles from './styles/editor.styles.scss';
 
 interface HaFormSchema {
@@ -20,16 +21,11 @@ const FIELD_LABELS: Record<string, string> = {
   max_map_markers: 'editor.max_map_markers',
 };
 
-// Kept in step with setConfig() in earthquakelist-card.ts. They fill the form so the
-// boxes are never blank, but they are stripped again before the config is saved: a
-// YAML config full of values that only repeat the defaults is noise the user has to
-// read past, and it freezes today's defaults into every dashboard.
-const DEFAULTS: Partial<EarthquakeListCardConfig> = {
-  show_map: true,
-  show_list: true,
-  max_list_items: 5,
-  max_map_markers: 10,
-};
+// The same table setConfig() applies, imported rather than copied: these fill the
+// form so the boxes are never blank, and are stripped again before the config is
+// saved. Stripping is only behaviour-neutral while the two agree, which is why
+// they must not be two tables.
+const DEFAULTS: Partial<EarthquakeListCardConfig> = CARD_DEFAULTS;
 
 function stripDefaults(config: EarthquakeListCardConfig): EarthquakeListCardConfig {
   const stripped = { ...config } as Record<string, unknown>;
@@ -49,7 +45,14 @@ function displaySchema(showMap: boolean, showList: boolean): HaFormSchema[] {
   return [
     { name: 'title', selector: { text: {} } },
     { name: 'show_map', selector: { boolean: {} } },
-    ...(showMap ? [{ name: 'max_map_markers', selector: { number: { min: 1, max: 10, step: 1, mode: 'box' } } }] : []),
+    ...(showMap
+      ? [
+          {
+            name: 'max_map_markers',
+            selector: { number: { min: 1, max: MAX_MAP_MARKERS_LIMIT, step: 1, mode: 'box' } },
+          },
+        ]
+      : []),
     { name: 'show_list', selector: { boolean: {} } },
     ...(showList ? [{ name: 'max_list_items', selector: { number: { min: 1, max: 20, step: 1, mode: 'box' } } }] : []),
   ];

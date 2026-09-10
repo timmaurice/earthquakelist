@@ -12,13 +12,11 @@ import {
 } from './types';
 import { fireEvent, formatRelativeTime, isSafeUrl, magnitudeSeverity } from './utils';
 import { localize } from './localize';
+import { CARD_DEFAULTS } from './defaults';
 
 interface ResolvedPlace {
   entityId: string;
 }
-
-// Matches DEFAULT_HISTORY_LIMIT in const.py — the most the sensor ever returns.
-const DEFAULT_MAX_MAP_MARKERS = 10;
 
 const ELEMENT_NAME = 'earthquakelist-card';
 
@@ -65,13 +63,7 @@ export class EarthquakeListCard extends LitElement implements LovelaceCard {
       throw new Error(localize(undefined, 'common.errors.invalid_entity', { entity: wrongDomain }));
     }
     this._config = {
-      show_map: true,
-      show_list: true,
-      max_list_items: 5,
-      // Defaults to every earthquake the sensor provides, which is deliberately more than
-      // the list shows: the map has room for surrounding context. Set it lower (or to
-      // max_list_items + 1) to keep the two in step.
-      max_map_markers: DEFAULT_MAX_MAP_MARKERS,
+      ...CARD_DEFAULTS,
       ...config,
     };
   }
@@ -235,7 +227,7 @@ export class EarthquakeListCard extends LitElement implements LovelaceCard {
             ? html`<div class="map-wrapper">
                 <earthquakelist-map
                   .hass=${this.hass}
-                  .earthquakes=${earthquakes.slice(0, this._config.max_map_markers ?? DEFAULT_MAX_MAP_MARKERS)}
+                  .earthquakes=${earthquakes.slice(0, this._config.max_map_markers ?? CARD_DEFAULTS.max_map_markers)}
                 ></earthquakelist-map>
               </div>`
             : nothing
