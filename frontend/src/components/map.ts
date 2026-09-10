@@ -13,6 +13,7 @@ import mapStyles from '../styles/map-styles.scss';
 import { EarthquakeListItem, HomeAssistant, MapTileSource } from '../types';
 import { isSafeUrl, magnitudeSeverity } from '../utils';
 import { localize } from '../localize';
+import { installMapLibreWorker } from '../maplibre-worker';
 
 const OPENFREEMAP_DARK_STYLE = 'https://tiles.openfreemap.org/styles/dark';
 const OPENFREEMAP_LIGHT_STYLE = 'https://tiles.openfreemap.org/styles/positron';
@@ -220,8 +221,16 @@ export class EarthquakeListMap extends LitElement {
 
   private async _getMapLibre() {
     if (!this._maplibregl) {
-      // Stay on v5.
-      this._maplibregl = await import('maplibre-gl');
+      // maplibre-gl v6 loads its Web Worker from a file next to maplibre-gl.mjs — in v5 the
+      // worker was a string inside the main bundle. A HACS card is a single file, so that
+      // request 404s, and MapLibre then cannot parse vector tiles and gives no sign of it: the
+      // style comes back with no sources and no layers, isStyleLoaded() stays false, no tile
+      // request is made and nothing throws. `installMapLibreWorker` supplies the worker from a
+      // blob built out of the bundled source; it must run before the first
+      // `new maplibregl.Map(...)`.
+      const maplibregl = await import('maplibre-gl');
+      installMapLibreWorker(maplibregl);
+      this._maplibregl = maplibregl;
     }
     return this._maplibregl!;
   }
