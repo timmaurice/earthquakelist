@@ -103,6 +103,45 @@ describe('EarthquakeListCard', () => {
     expect((moreInfoSpy.mock.calls[0][0] as CustomEvent).detail).toEqual({ entityId });
   });
 
+  it('still renders when alert_level is the boolean the API sends for "no alert"', async () => {
+    // The API returns the JSON boolean false rather than null, and this runs
+    // inside render() - so calling a string method on it used to throw and
+    // leave the user with a blank card and no error at all.
+    const entityId = 'sensor.earthquakelist_nowhere_latest_earthquake';
+    const card = new EarthquakeListCard();
+    card.hass = makeHass({
+      states: {
+        [entityId]: {
+          entity_id: entityId,
+          state: '5.6',
+          last_changed: '',
+          last_updated: '',
+          attributes: {
+            monitored_place: 'Nowhere',
+            earthquakes: [
+              {
+                id: 'e1',
+                magnitude: 5.6,
+                place: 'Nowhere',
+                location: '11 km SE of Nowhere',
+                alert_level: false,
+                alert_tsunami: false,
+              },
+            ],
+          },
+        },
+      },
+    });
+    card.setConfig({ type: 'custom:earthquakelist-card', places: [entityId], show_map: false });
+    document.body.appendChild(card);
+    await card.updateComplete;
+
+    expect(card.shadowRoot?.querySelector('ha-card')).not.toBeNull();
+    expect(card.shadowRoot?.querySelector('.summary-location')?.textContent?.trim()).toBe('Nowhere');
+    expect(card.shadowRoot?.querySelector('.magnitude-badge')?.textContent?.trim()).toBe('5.6');
+    expect(card.shadowRoot?.querySelector('.alert-badge.impact-red')).toBeNull();
+  });
+
   it('shows the tsunami alert badge when alert_tsunami is true', async () => {
     const entityId = 'sensor.earthquakelist_japan_latest_earthquake';
     const card = new EarthquakeListCard();

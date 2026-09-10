@@ -204,7 +204,11 @@ export class EarthquakeListCard extends LitElement implements LovelaceCard {
   // "no response needed" level, so surfacing it as a warning would just cry wolf —
   // in practice almost every quake the API returns carries green.
   private _impactAlertLevel(eq: EarthquakeListItem): 'yellow' | 'orange' | 'red' | undefined {
-    const level = eq.alert_level?.toLowerCase();
+    // The API sends the JSON boolean false for "no alert", not null - and this
+    // runs inside render(), so calling a string method on it blanked the whole
+    // card without any error the user could see. parser.py happens to turn it
+    // into a string today; that is one change away from not being true.
+    const level = typeof eq.alert_level === 'string' ? eq.alert_level.toLowerCase() : undefined;
     return level === 'yellow' || level === 'orange' || level === 'red' ? level : undefined;
   }
 
