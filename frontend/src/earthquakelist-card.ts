@@ -71,8 +71,11 @@ export class EarthquakeListCard extends LitElement implements LovelaceCard {
     };
   }
 
+  // Never 0: an empty `places` is legal now (the picker's stub config, which renders a
+  // one-line hint), and a 0 here makes a masonry dashboard treat the card as weightless
+  // when it balances its columns.
   public getCardSize(): number {
-    return (this._config?.places?.length ?? 1) * 3;
+    return Math.max(this._config?.places?.length ?? 1, 1) * 3;
   }
 
   // Sections dashboards size cards in grid columns/rows; without this the map's fixed

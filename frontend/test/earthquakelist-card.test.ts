@@ -59,6 +59,21 @@ describe('EarthquakeListCard', () => {
     expect(card.shadowRoot?.querySelector('.empty-state')?.textContent).toContain('Pick at least one place');
   });
 
+  it('never reports a card size of 0, not even for the empty stub config', () => {
+    // An empty `places` became legal when setConfig stopped throwing for it. Masonry
+    // balances its columns by getCardSize(), so a 0 makes the card weightless there.
+    const card = new EarthquakeListCard();
+    card.setConfig(EarthquakeListCard.getStubConfig());
+    expect(card.getCardSize()).toBe(3);
+
+    const twoPlaces = new EarthquakeListCard();
+    twoPlaces.setConfig({
+      type: 'custom:earthquakelist-card',
+      places: ['sensor.earthquakelist_corfu_latest_earthquake', 'sensor.earthquakelist_japan_latest_earthquake'],
+    });
+    expect(twoPlaces.getCardSize()).toBe(6);
+  });
+
   it('reports grid options so a sections dashboard can size the map', () => {
     const card = new EarthquakeListCard();
     expect(card.getGridOptions()).toEqual({ columns: 12, rows: 'auto', min_columns: 6, min_rows: 3 });
