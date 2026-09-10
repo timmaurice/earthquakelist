@@ -8,7 +8,13 @@
     "show_map": "Karte anzeigen",
     "show_list": "Liste vorheriger Erdbeben anzeigen",
     "max_list_items": "Max. Listeneinträge",
-    "max_map_markers": "Max. Kartenmarker"
+    "max_map_markers": "Max. Kartenmarker",
+    "map_tile_source": "Quelle der Kartenkacheln",
+    "map_tile_source_options": {
+      "auto": "Automatisch (Home Assistant, falls verfügbar)",
+      "core": "Home Assistant",
+      "openfreemap": "OpenFreeMap"
+    }
   },
   "card": {
     "tsunami_alert": "Tsunami möglich",

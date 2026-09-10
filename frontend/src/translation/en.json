@@ -8,7 +8,13 @@
     "show_map": "Show map",
     "show_list": "Show previous earthquakes list",
     "max_list_items": "Max. list items",
-    "max_map_markers": "Max. map markers"
+    "max_map_markers": "Max. map markers",
+    "map_tile_source": "Map tile source",
+    "map_tile_source_options": {
+      "auto": "Automatic (Home Assistant if available)",
+      "core": "Home Assistant",
+      "openfreemap": "OpenFreeMap"
+    }
   },
   "card": {
     "tsunami_alert": "Tsunami possible",
