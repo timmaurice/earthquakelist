@@ -30,11 +30,5 @@
     "alert_orange": "Peringatan oranye",
     "alert_red": "Peringatan merah",
     "tsunami_hint": "Gempa laut berkekuatan besar, ditandai USGS untuk evaluasi tsunami — bukan peringatan yang dikonfirmasi"
-  },
-  "common": {
-    "errors": {
-      "no_places": "Anda harus menentukan setidaknya satu lokasi.",
-      "invalid_entity": "{entity} bukan entitas sensor."
-    }
   }
 }

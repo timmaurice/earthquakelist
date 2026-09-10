@@ -30,11 +30,5 @@
     "alert_orange": "橙色预警",
     "alert_red": "红色预警",
     "tsunami_hint": "大规模海域地震，USGS 标记为需评估海啸 — 并非已确认的警报"
-  },
-  "common": {
-    "errors": {
-      "no_places": "您需要至少定义一个地点。",
-      "invalid_entity": "{entity} 不是传感器实体。"
-    }
   }
 }

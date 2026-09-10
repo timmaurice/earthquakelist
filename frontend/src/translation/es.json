@@ -30,11 +30,5 @@
     "alert_orange": "Alerta naranja",
     "alert_red": "Alerta roja",
     "tsunami_hint": "Terremoto marino de gran magnitud, marcado por el USGS para evaluación de tsunami — no es un aviso confirmado"
-  },
-  "common": {
-    "errors": {
-      "no_places": "Debes definir al menos una ubicación.",
-      "invalid_entity": "{entity} no es una entidad de tipo sensor."
-    }
   }
 }
