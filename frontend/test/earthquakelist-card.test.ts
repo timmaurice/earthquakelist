@@ -74,6 +74,9 @@ describe('EarthquakeListCard', () => {
     expect(twoPlaces.getCardSize()).toBe(6);
   });
 
+  // A change-detector for the literal, nothing more - it cannot show that Home Assistant
+  // reads any of it. The proof is card.spec.ts's sections-dashboard test, which asserts
+  // HA clamps the card to the min_columns reported here.
   it('reports grid options so a sections dashboard can size the map', () => {
     const card = new EarthquakeListCard();
     expect(card.getGridOptions()).toEqual({ columns: 12, rows: 'auto', min_columns: 6, min_rows: 3 });
@@ -445,6 +448,8 @@ describe('EarthquakeListCard', () => {
     expect(empty?.textContent).not.toContain('No earthquake data yet');
   });
 
+  // Regression guard, not fix-proving: the third empty state is the one that already
+  // existed, and this pins that splitting out the other two did not swallow it.
   it('keeps the plain empty state for a sensor that simply matched nothing', async () => {
     const entityId = 'sensor.earthquakelist_corfu_latest_earthquake';
     const card = new EarthquakeListCard();

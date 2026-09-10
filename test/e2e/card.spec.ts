@@ -36,6 +36,30 @@ const DASHBOARD = {
       title: 'Typo',
       cards: [{ type: 'custom:earthquakelist-card', places: [MISSING_ENTITY], title: 'E2E typo' }],
     },
+    {
+      // A sections view, not masonry: getGridOptions() is only ever consulted here.
+      title: 'Sections',
+      type: 'sections',
+      max_columns: 4,
+      sections: [
+        {
+          type: 'grid',
+          cards: [
+            { type: 'custom:earthquakelist-card', places: [ENTITY], title: 'E2E sections' },
+            // Asks for fewer columns than the card's min_columns, so Home Assistant
+            // has to clamp it. The markdown card next to it asks for the same and
+            // gets it, which is what makes this a real assertion and not a tautology.
+            {
+              type: 'custom:earthquakelist-card',
+              places: [ENTITY],
+              title: 'E2E narrow',
+              grid_options: { columns: 3 },
+            },
+            { type: 'markdown', content: 'neighbour', grid_options: { columns: 3 } },
+          ],
+        },
+      ],
+    },
   ],
 };
 
@@ -84,6 +108,32 @@ test.describe('The card on a real dashboard', () => {
     await expect(empty).toBeVisible({ timeout: 60_000 });
     await expect(empty).toContainText(MISSING_ENTITY);
     await expect(empty).not.toContainText('No earthquake data yet');
+  });
+
+  test('is sized on a sections dashboard by the grid options it reports', async ({ page }) => {
+    // The unit test can only hand getGridOptions()'s literal back to itself. This is
+    // the only place that shows Home Assistant actually reads it: it puts the width
+    // the card asks for on the wrapper as --column-size, and refuses to go below the
+    // min_columns the card reports.
+    await page.goto(`/${urlPath}/3`);
+
+    const cards = page.locator('earthquakelist-card');
+    await expect(cards.first().locator('ha-card')).toBeVisible({ timeout: 60_000 });
+
+    const columnSize = (index: number) =>
+      cards
+        .nth(index)
+        .evaluate((el) => (el.closest('.card') as HTMLElement | null)?.style.getPropertyValue('--column-size').trim());
+
+    // Unconstrained: the 12 columns getGridOptions() asks for.
+    expect(await columnSize(0)).toBe('12');
+    // Asked for 3, clamped up to the min_columns of 6 the card reports ...
+    expect(await columnSize(1)).toBe('6');
+    // ... while a card that reports no minimum is left at the 3 it was given.
+    const markdownColumnSize = await page
+      .locator('hui-markdown-card')
+      .evaluate((el) => (el.closest('.card') as HTMLElement | null)?.style.getPropertyValue('--column-size').trim());
+    expect(markdownColumnSize).toBe('3');
   });
 
   test('comes back after leaving the view and returning', async ({ page }) => {

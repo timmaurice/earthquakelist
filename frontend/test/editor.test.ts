@@ -79,6 +79,8 @@ describe('EarthquakeListCardEditor', () => {
     });
   });
 
+  // Regression guard, not fix-proving: it pins that stripping the defaults did not
+  // start eating configured values too.
   it('keeps values that differ from the default', () => {
     const editor = new EarthquakeListCardEditor();
     editor.hass = makeHass();
