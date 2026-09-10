@@ -8,7 +8,13 @@
     "show_map": "显示地图",
     "show_list": "显示之前的地震列表",
     "max_list_items": "最大列表项数",
-    "max_map_markers": "最大地图标记数"
+    "max_map_markers": "最大地图标记数",
+    "map_tile_source": "地图瓦片来源",
+    "map_tile_source_options": {
+      "auto": "自动（可用时使用 Home Assistant）",
+      "core": "Home Assistant",
+      "openfreemap": "OpenFreeMap"
+    }
   },
   "card": {
     "tsunami_alert": "可能引发海啸",

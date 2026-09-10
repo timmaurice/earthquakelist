@@ -24,7 +24,20 @@ export interface HomeAssistant {
     darkMode?: boolean;
     [key: string]: unknown;
   };
+  config?: {
+    // The integrations this instance has loaded. Used to detect `map_tiles` (HA 2026.9+),
+    // which proxies OpenStreetMap tiles through the user's own instance.
+    components?: string[];
+    [key: string]: unknown;
+  };
 }
+
+/**
+ * Where the base map's tiles come from. `auto` uses Home Assistant's own `map_tiles` proxy
+ * when that integration is loaded and falls back to OpenFreeMap otherwise; `core` and
+ * `openfreemap` force one or the other.
+ */
+export type MapTileSource = 'auto' | 'core' | 'openfreemap';
 
 export interface EarthquakeListItem {
   id?: string;
@@ -129,6 +142,7 @@ export interface EarthquakeListCardConfig extends LovelaceCardConfig {
   show_list?: boolean;
   max_list_items?: number;
   max_map_markers?: number;
+  map_tile_source?: MapTileSource;
 }
 
 declare global {

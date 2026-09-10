@@ -8,7 +8,13 @@
     "show_map": "Mostrar mapa",
     "show_list": "Mostrar lista de terremotos anteriores",
     "max_list_items": "Máx. elementos de la lista",
-    "max_map_markers": "Máx. marcadores del mapa"
+    "max_map_markers": "Máx. marcadores del mapa",
+    "map_tile_source": "Origen de las teselas del mapa",
+    "map_tile_source_options": {
+      "auto": "Automático (Home Assistant si está disponible)",
+      "core": "Home Assistant",
+      "openfreemap": "OpenFreeMap"
+    }
   },
   "card": {
     "tsunami_alert": "Posible tsunami",

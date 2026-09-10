@@ -8,7 +8,13 @@
     "show_map": "地図を表示",
     "show_list": "以前の地震リストを表示",
     "max_list_items": "リストの最大件数",
-    "max_map_markers": "地図上の最大マーカー数"
+    "max_map_markers": "地図上の最大マーカー数",
+    "map_tile_source": "地図タイルの提供元",
+    "map_tile_source_options": {
+      "auto": "自動 (利用可能なら Home Assistant)",
+      "core": "Home Assistant",
+      "openfreemap": "OpenFreeMap"
+    }
   },
   "card": {
     "tsunami_alert": "津波の可能性",

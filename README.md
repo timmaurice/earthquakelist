@@ -18,6 +18,7 @@ This custom integration for Home Assistant fetches earthquake data directly from
 - **Detailed Attributes**: Location, time, depth, distance & direction from the monitored point, tsunami and USGS impact-level flags, whether the epicenter was offshore, felt reports, Mercalli intensity, significance, the USGS reference code, related news coverage, and up to 10 recent matching earthquakes.
 - **Device per Location**: Creates a dedicated device in Home Assistant for each monitored location.
 - **Bundled Lovelace Card**: Magnitude badge, tsunami and USGS impact-level badges, a MapLibre GL map with magnitude-colored markers and detail popups, and a previous-earthquakes list — configurable per place via a GUI editor.
+- **Private by default**: the map's tiles are served through Home Assistant itself where possible, so your location is not sent to a third party — see [Map tile privacy](#map-tile-privacy).
 - **Localization**: English, German, Spanish, Indonesian, Japanese and Chinese out of the box.
 
 ## Localization
@@ -111,14 +112,35 @@ places:
   - sensor.earthquakelist_japan_latest_earthquake
 ```
 
-| Option            | Type       | Default | Description                                                                                                                                                                                                                                     |
-| ----------------- | ---------- | ------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `places`          | `string[]` | —       | Required. One `sensor.earthquakelist_*` entity per place.                                                                                                                                                                                       |
-| `title`           | `string`   | —       | Optional card title.                                                                                                                                                                                                                            |
-| `show_map`        | `boolean`  | `true`  | Show the MapLibre GL map with magnitude-colored markers.                                                                                                                                                                                        |
-| `max_map_markers` | `number`   | `10`    | Max. number of markers on the map. Independent of `max_list_items`, so the map can show more context than the list — set it to `max_list_items` + 1 to keep the two in step (the list excludes the latest earthquake, which is shown above it). |
-| `show_list`       | `boolean`  | `true`  | Show the previous-earthquakes list below the map.                                                                                                                                                                                               |
-| `max_list_items`  | `number`   | `5`     | Max. number of entries shown in the previous earthquakes list.                                                                                                                                                                                  |
+| Option            | Type       | Default | Description                                                                                                                                                                                                                                                                          |
+| ----------------- | ---------- | ------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `places`          | `string[]` | —       | Required. One `sensor.earthquakelist_*` entity per place.                                                                                                                                                                                                                            |
+| `title`           | `string`   | —       | Optional card title.                                                                                                                                                                                                                                                                 |
+| `show_map`        | `boolean`  | `true`  | Show the MapLibre GL map with magnitude-colored markers.                                                                                                                                                                                                                             |
+| `max_map_markers` | `number`   | `10`    | Max. number of markers on the map. Independent of `max_list_items`, so the map can show more context than the list — set it to `max_list_items` + 1 to keep the two in step (the list excludes the latest earthquake, which is shown above it).                                      |
+| `map_tile_source` | `string`   | `auto`  | Where the base map's tiles come from. `auto` uses Home Assistant's own `map_tiles` proxy when that integration is loaded (HA 2026.9+) and falls back to OpenFreeMap otherwise; `core` forces the proxy; `openfreemap` forces OpenFreeMap. See [Map tile privacy](#map-tile-privacy). |
+| `show_list`       | `boolean`  | `true`  | Show the previous-earthquakes list below the map.                                                                                                                                                                                                                                    |
+| `max_list_items`  | `number`   | `5`     | Max. number of entries shown in the previous earthquakes list.                                                                                                                                                                                                                       |
+
+### Map tile privacy
+
+The base map needs tiles, and fetching them means telling whoever serves them roughly where
+you are looking — a bounding box around the monitored place, on every dashboard render.
+
+Home Assistant 2026.9 added the `map_tiles` integration, which proxies OpenStreetMap tiles
+through your own instance. When it is loaded, the card uses it by default and the tile
+requests never leave your network. When it is not, the card falls back to
+[OpenFreeMap](https://openfreemap.org/) as before.
+
+`map_tile_source` decides this: `auto` (default) prefers the proxy and falls back, `core`
+forces the proxy, `openfreemap` forces OpenFreeMap. If a forced proxy turns out to be
+unavailable, the card still falls back rather than showing an empty map, and logs a single
+warning.
+
+Two details worth knowing about the proxied map: it serves raster tiles up to zoom level 14
+(the map still zooms in further, by scaling the last available tile), and it only comes in
+light, so dark mode is produced by inverting the tiles in CSS — the same way Home Assistant's
+own map card does it.
 
 ## Notifications
 

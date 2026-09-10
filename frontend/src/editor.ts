@@ -19,6 +19,7 @@ const FIELD_LABELS: Record<string, string> = {
   // Without this the number box sat in the form with a blank label - the
   // translation key existed in all eight files, it was just never mapped.
   max_map_markers: 'editor.max_map_markers',
+  map_tile_source: 'editor.map_tile_source',
 };
 
 // The same table setConfig() applies, imported rather than copied: these fill the
@@ -41,7 +42,9 @@ const PLACES_SCHEMA: HaFormSchema[] = [
   { name: 'places', selector: { entity: { multiple: true, filter: { integration: 'earthquakelist' } } } },
 ];
 
-function displaySchema(showMap: boolean, showList: boolean): HaFormSchema[] {
+// `hass` is needed for the option labels: ha-form localizes field names through
+// computeLabel, but the options inside a select selector carry their own labels.
+function displaySchema(hass: HomeAssistant, showMap: boolean, showList: boolean): HaFormSchema[] {
   return [
     { name: 'title', selector: { text: {} } },
     { name: 'show_map', selector: { boolean: {} } },
@@ -50,6 +53,18 @@ function displaySchema(showMap: boolean, showList: boolean): HaFormSchema[] {
           {
             name: 'max_map_markers',
             selector: { number: { min: 1, max: MAX_MAP_MARKERS_LIMIT, step: 1, mode: 'box' } },
+          },
+          {
+            name: 'map_tile_source',
+            selector: {
+              select: {
+                mode: 'dropdown',
+                options: (['auto', 'core', 'openfreemap'] as const).map((value) => ({
+                  value,
+                  label: localize(hass, `editor.map_tile_source_options.${value}`),
+                })),
+              },
+            },
           },
         ]
       : []),
@@ -95,7 +110,7 @@ export class EarthquakeListCardEditor extends LitElement implements LovelaceCard
             <ha-form
               .hass=${this.hass}
               .data=${this._formData}
-              .schema=${displaySchema(this._formData.show_map !== false, this._formData.show_list !== false)}
+              .schema=${displaySchema(this.hass, this._formData.show_map !== false, this._formData.show_list !== false)}
               .computeLabel=${this._computeLabel}
               @value-changed=${this._valueChanged}
             ></ha-form>

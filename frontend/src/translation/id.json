@@ -8,7 +8,13 @@
     "show_map": "Tampilkan peta",
     "show_list": "Tampilkan daftar gempa bumi sebelumnya",
     "max_list_items": "Maks. item daftar",
-    "max_map_markers": "Maks. penanda peta"
+    "max_map_markers": "Maks. penanda peta",
+    "map_tile_source": "Sumber ubin peta",
+    "map_tile_source_options": {
+      "auto": "Otomatis (Home Assistant jika tersedia)",
+      "core": "Home Assistant",
+      "openfreemap": "OpenFreeMap"
+    }
   },
   "card": {
     "tsunami_alert": "Kemungkinan tsunami",

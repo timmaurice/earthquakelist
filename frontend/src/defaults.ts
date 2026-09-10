@@ -17,6 +17,9 @@ export const CARD_DEFAULTS = {
   // for surrounding context. Set it lower (or to max_list_items + 1) to keep the
   // two in step.
   max_map_markers: 10,
+  // `auto` prefers Home Assistant's own `map_tiles` proxy when that integration is loaded and
+  // falls back to OpenFreeMap otherwise; `core` and `openfreemap` force one or the other.
+  map_tile_source: 'auto',
 } as const satisfies Partial<EarthquakeListCardConfig>;
 
 // The sensor never returns more than this, so the editor's selector stops here.
