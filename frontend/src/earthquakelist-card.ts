@@ -13,6 +13,8 @@ interface ResolvedPlace {
 // Matches DEFAULT_HISTORY_LIMIT in const.py — the most the sensor ever returns.
 const DEFAULT_MAX_MAP_MARKERS = 10;
 
+const ELEMENT_NAME = 'earthquakelist-card';
+
 export class EarthquakeListCard extends LitElement implements LovelaceCard {
   @property({ attribute: false }) public hass!: HomeAssistant;
   @state() private _config!: EarthquakeListCardConfig;
@@ -310,21 +312,28 @@ export class EarthquakeListCard extends LitElement implements LovelaceCard {
   `;
 }
 
-customElements.define('earthquakelist-card', EarthquakeListCard);
+// An older install may still have a second Lovelace resource for this bundle.
+// customElements.define() throws on a duplicate name, which would take down
+// whichever copy loads second - card, editor and map alike.
+if (!customElements.get(ELEMENT_NAME)) {
+  customElements.define(ELEMENT_NAME, EarthquakeListCard);
+}
 
 window.customCards = window.customCards || [];
-window.customCards.push({
-  type: 'earthquakelist-card',
-  name: 'Earthquake List Card',
-  description: 'Display recent earthquakes for a monitored location, with a map and list.',
-  preview: true,
-  documentationURL: 'https://github.com/timmaurice/earthquakelist',
-  getEntitySuggestion: (hass, entityId) => {
-    if (hass.entities[entityId]?.platform !== 'earthquakelist') {
-      return null;
-    }
-    return {
-      config: { type: 'custom:earthquakelist-card', places: [entityId] },
-    };
-  },
-});
+if (!window.customCards.some((card) => card.type === ELEMENT_NAME)) {
+  window.customCards.push({
+    type: ELEMENT_NAME,
+    name: 'Earthquake List Card',
+    description: 'Display recent earthquakes for a monitored location, with a map and list.',
+    preview: true,
+    documentationURL: 'https://github.com/timmaurice/earthquakelist',
+    getEntitySuggestion: (hass, entityId) => {
+      if (hass.entities[entityId]?.platform !== 'earthquakelist') {
+        return null;
+      }
+      return {
+        config: { type: `custom:${ELEMENT_NAME}`, places: [entityId] },
+      };
+    },
+  });
+}
