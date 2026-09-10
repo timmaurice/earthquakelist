@@ -15,7 +15,31 @@ const FIELD_LABELS: Record<string, string> = {
   show_map: 'editor.show_map',
   show_list: 'editor.show_list',
   max_list_items: 'editor.max_list_items',
+  // Without this the number box sat in the form with a blank label - the
+  // translation key existed in all eight files, it was just never mapped.
+  max_map_markers: 'editor.max_map_markers',
 };
+
+// Kept in step with setConfig() in earthquakelist-card.ts. They fill the form so the
+// boxes are never blank, but they are stripped again before the config is saved: a
+// YAML config full of values that only repeat the defaults is noise the user has to
+// read past, and it freezes today's defaults into every dashboard.
+const DEFAULTS: Partial<EarthquakeListCardConfig> = {
+  show_map: true,
+  show_list: true,
+  max_list_items: 5,
+  max_map_markers: 10,
+};
+
+function stripDefaults(config: EarthquakeListCardConfig): EarthquakeListCardConfig {
+  const stripped = { ...config } as Record<string, unknown>;
+  for (const [key, value] of Object.entries(DEFAULTS)) {
+    if (stripped[key] === value) {
+      delete stripped[key];
+    }
+  }
+  return stripped as EarthquakeListCardConfig;
+}
 
 const PLACES_SCHEMA: HaFormSchema[] = [
   { name: 'places', selector: { entity: { multiple: true, filter: { integration: 'earthquakelist' } } } },
@@ -36,7 +60,12 @@ export class EarthquakeListCardEditor extends LitElement implements LovelaceCard
   @state() private _config!: EarthquakeListCardConfig;
 
   public setConfig(config: EarthquakeListCardConfig): void {
-    this._config = { show_map: true, show_list: true, max_list_items: 5, ...config };
+    this._config = config;
+  }
+
+  // What the form shows: the saved config on top of the defaults.
+  private get _formData(): EarthquakeListCardConfig {
+    return { ...DEFAULTS, ...this._config } as EarthquakeListCardConfig;
   }
 
   private _computeLabel = (schema: HaFormSchema): string => {
@@ -45,7 +74,7 @@ export class EarthquakeListCardEditor extends LitElement implements LovelaceCard
   };
 
   private _valueChanged(ev: CustomEvent): void {
-    const newConfig = ev.detail.value as EarthquakeListCardConfig;
+    const newConfig = stripDefaults(ev.detail.value as EarthquakeListCardConfig);
     this._config = newConfig;
     fireEvent(this, 'config-changed', { config: newConfig });
   }
@@ -62,8 +91,8 @@ export class EarthquakeListCardEditor extends LitElement implements LovelaceCard
             <div class="option-group-title">${localize(this.hass, 'editor.groups.display')}</div>
             <ha-form
               .hass=${this.hass}
-              .data=${this._config}
-              .schema=${displaySchema(this._config.show_map !== false, this._config.show_list !== false)}
+              .data=${this._formData}
+              .schema=${displaySchema(this._formData.show_map !== false, this._formData.show_list !== false)}
               .computeLabel=${this._computeLabel}
               @value-changed=${this._valueChanged}
             ></ha-form>
@@ -73,7 +102,7 @@ export class EarthquakeListCardEditor extends LitElement implements LovelaceCard
             <div class="option-group-title">${localize(this.hass, 'editor.places')}</div>
             <ha-form
               .hass=${this.hass}
-              .data=${this._config}
+              .data=${this._formData}
               .schema=${PLACES_SCHEMA}
               .computeLabel=${this._computeLabel}
               @value-changed=${this._valueChanged}
