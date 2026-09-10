@@ -1,0 +1,5 @@
+# Minimal configuration for the end-to-end run. The bare domain key is what
+# makes async_setup run, which is where the card resource is registered.
+default_config:
+
+earthquakelist:

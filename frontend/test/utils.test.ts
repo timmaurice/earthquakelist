@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
-import { fireEvent, formatRelativeTime, magnitudeSeverity } from '../src/utils';
+import { fireEvent, formatRelativeTime, isSafeUrl, magnitudeSeverity } from '../src/utils';
 import { HomeAssistant } from '../src/types';
 
 function makeHass(language: string): HomeAssistant {
@@ -108,5 +108,19 @@ describe('fireEvent', () => {
 
     const event = handler.mock.calls[0][0] as CustomEvent;
     expect(event.cancelable).toBe(true);
+  });
+});
+
+describe('isSafeUrl', () => {
+  it('accepts absolute http(s) URLs', () => {
+    expect(isSafeUrl('https://example.com/a')).toBe(true);
+    expect(isSafeUrl('HTTP://example.com/a')).toBe(true);
+  });
+
+  it('rejects anything else, including the schemes an href would execute', () => {
+    expect(isSafeUrl('javascript:alert(1)')).toBe(false);
+    expect(isSafeUrl('data:text/html,<script>alert(1)</script>')).toBe(false);
+    expect(isSafeUrl('//example.com')).toBe(false);
+    expect(isSafeUrl(undefined)).toBe(false);
   });
 });

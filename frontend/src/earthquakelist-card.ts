@@ -2,16 +2,23 @@ import { LitElement, html, css, TemplateResult, unsafeCSS, nothing } from 'lit';
 import { property, state } from 'lit/decorators.js';
 import styles from './styles/card.styles.scss';
 import './components/map';
-import { EarthquakeListCardConfig, EarthquakeListItem, HomeAssistant, LovelaceCard, LovelaceCardEditor } from './types';
-import { fireEvent, formatRelativeTime, magnitudeSeverity } from './utils';
+import {
+  EarthquakeListCardConfig,
+  EarthquakeListItem,
+  HassEntityRegistryDisplayEntry,
+  HomeAssistant,
+  LovelaceCard,
+  LovelaceCardEditor,
+} from './types';
+import { fireEvent, formatRelativeTime, isSafeUrl, magnitudeSeverity } from './utils';
 import { localize } from './localize';
+import { CARD_DEFAULTS } from './defaults';
 
 interface ResolvedPlace {
   entityId: string;
 }
 
-// Matches DEFAULT_HISTORY_LIMIT in const.py — the most the sensor ever returns.
-const DEFAULT_MAX_MAP_MARKERS = 10;
+const ELEMENT_NAME = 'earthquakelist-card';
 
 export class EarthquakeListCard extends LitElement implements LovelaceCard {
   @property({ attribute: false }) public hass!: HomeAssistant;
@@ -22,28 +29,59 @@ export class EarthquakeListCard extends LitElement implements LovelaceCard {
     return document.createElement('earthquakelist-card-editor') as unknown as LovelaceCardEditor;
   }
 
-  public static getStubConfig(): EarthquakeListCardConfig {
-    return { type: 'custom:earthquakelist-card', places: [] };
+  // The card picker calls this to build its preview. Throwing here (which an empty
+  // `places` used to do in setConfig) makes the picker show an error tile instead of
+  // the card, so pick a real entity when the install has one and let the card render
+  // its own hint when it does not.
+  public static getStubConfig(
+    hass?: HomeAssistant,
+    entities?: string[] | HassEntityRegistryDisplayEntry[],
+  ): EarthquakeListCardConfig {
+    const isOwnSensor = (entityId: string): boolean =>
+      entityId.startsWith('sensor.') &&
+      (hass?.entities?.[entityId]?.platform === 'earthquakelist' || entityId.startsWith('sensor.earthquakelist_'));
+
+    const candidates = [
+      ...(entities ?? []).map((entity) => (typeof entity === 'string' ? entity : entity.entity_id)),
+      ...Object.keys(hass?.entities ?? {}),
+      ...Object.keys(hass?.states ?? {}),
+    ];
+    const place = candidates.find((entityId) => entityId && isOwnSensor(entityId));
+
+    return { type: `custom:${ELEMENT_NAME}`, places: place ? [place] : [] };
   }
 
+  // Deliberately English literals, not localize(): Home Assistant calls setConfig before
+  // it ever assigns hass, so there is no language to translate into and localize() only
+  // ever returned English here anyway. Translations for these would be dead weight.
   public setConfig(config: EarthquakeListCardConfig): void {
-    if (!config.places || !Array.isArray(config.places) || config.places.length === 0) {
-      throw new Error(localize(undefined, 'common.errors.no_places'));
+    if (!config.places || !Array.isArray(config.places)) {
+      throw new Error('You need to define at least one place.');
+    }
+    // A non-sensor entity would silently render as "no data yet" forever, so reject it
+    // as the config error it is. An empty list is not an error: that is the picker's
+    // stub config, and the card shows a hint for it instead.
+    const wrongDomain = config.places.filter(Boolean).find((entityId) => !entityId.startsWith('sensor.'));
+    if (wrongDomain) {
+      throw new Error(`${wrongDomain} is not a sensor entity.`);
     }
     this._config = {
-      show_map: true,
-      show_list: true,
-      max_list_items: 5,
-      // Defaults to every earthquake the sensor provides, which is deliberately more than
-      // the list shows: the map has room for surrounding context. Set it lower (or to
-      // max_list_items + 1) to keep the two in step.
-      max_map_markers: DEFAULT_MAX_MAP_MARKERS,
+      ...CARD_DEFAULTS,
       ...config,
     };
   }
 
+  // Never 0: an empty `places` is legal now (the picker's stub config, which renders a
+  // one-line hint), and a 0 here makes a masonry dashboard treat the card as weightless
+  // when it balances its columns.
   public getCardSize(): number {
-    return (this._config?.places?.length ?? 1) * 3;
+    return Math.max(this._config?.places?.length ?? 1, 1) * 3;
+  }
+
+  // Sections dashboards size cards in grid columns/rows; without this the map's fixed
+  // height cannot be lined up with the rows around it.
+  public getGridOptions(): { columns: number; rows: number | 'auto'; min_columns: number; min_rows: number } {
+    return { columns: 12, rows: 'auto', min_columns: 6, min_rows: 3 };
   }
 
   private _resolvePlaces(): ResolvedPlace[] {
@@ -97,7 +135,13 @@ export class EarthquakeListCard extends LitElement implements LovelaceCard {
 
     return html`
       <ha-card .header=${this._config.title}>
-        <div class="card-content">${places.map((place) => this._renderPlace(place))}</div>
+        <div class="card-content">
+          ${
+            places.length === 0
+              ? html`<div class="empty-state">${localize(this.hass, 'card.no_places_configured')}</div>`
+              : places.map((place) => this._renderPlace(place))
+          }
+        </div>
       </ha-card>
     `;
   }
@@ -107,13 +151,23 @@ export class EarthquakeListCard extends LitElement implements LovelaceCard {
     const name = stateObj?.attributes.monitored_place ?? stateObj?.attributes.friendly_name ?? place.entityId;
     const earthquakes = this._earthquakesFor(place.entityId);
 
-    if (!stateObj || earthquakes.length === 0) {
+    // Three states that used to look identical: a typo'd/removed entity, a sensor whose
+    // upstream fetch failed, and a genuinely quiet region.
+    const emptyMessage = !stateObj
+      ? localize(this.hass, 'card.entity_not_found', { entity: place.entityId })
+      : stateObj.state === 'unavailable'
+        ? localize(this.hass, 'card.entity_unavailable')
+        : earthquakes.length === 0
+          ? localize(this.hass, 'card.no_data')
+          : undefined;
+
+    if (emptyMessage !== undefined) {
       return html`
         <div class="place-row">
           <div class="place-header">
             <span class="place-name">${name}</span>
           </div>
-          <div class="empty-state">${localize(this.hass, 'card.no_data')}</div>
+          <div class="empty-state ${!stateObj ? 'error' : ''}">${emptyMessage}</div>
         </div>
       `;
     }
@@ -179,7 +233,7 @@ export class EarthquakeListCard extends LitElement implements LovelaceCard {
             ? html`<div class="map-wrapper">
                 <earthquakelist-map
                   .hass=${this.hass}
-                  .earthquakes=${earthquakes.slice(0, this._config.max_map_markers ?? DEFAULT_MAX_MAP_MARKERS)}
+                  .earthquakes=${earthquakes.slice(0, this._config.max_map_markers ?? CARD_DEFAULTS.max_map_markers)}
                 ></earthquakelist-map>
               </div>`
             : nothing
@@ -202,7 +256,11 @@ export class EarthquakeListCard extends LitElement implements LovelaceCard {
   // "no response needed" level, so surfacing it as a warning would just cry wolf —
   // in practice almost every quake the API returns carries green.
   private _impactAlertLevel(eq: EarthquakeListItem): 'yellow' | 'orange' | 'red' | undefined {
-    const level = eq.alert_level?.toLowerCase();
+    // The API sends the JSON boolean false for "no alert", not null - and this
+    // runs inside render(), so calling a string method on it blanked the whole
+    // card without any error the user could see. parser.py happens to turn it
+    // into a string today; that is one change away from not being true.
+    const level = typeof eq.alert_level === 'string' ? eq.alert_level.toLowerCase() : undefined;
     return level === 'yellow' || level === 'orange' || level === 'red' ? level : undefined;
   }
 
@@ -251,7 +309,9 @@ export class EarthquakeListCard extends LitElement implements LovelaceCard {
   }
 
   private _renderNewsLink(eq: EarthquakeListItem): TemplateResult | typeof nothing {
-    if (!eq.news_link) return nothing;
+    // Lit attribute bindings do not sanitize URLs, so an unexpected scheme has to be
+    // dropped here - the map popup applies the same guard.
+    if (!isSafeUrl(eq.news_link)) return nothing;
     // The generated headlines restate the magnitude and place already shown in the row
     // ("Shallow M6.0 Earthquake struck ... 104km from Kaohsiung in Taiwan"), so they go in
     // the tooltip and the link itself stays short.
@@ -310,21 +370,28 @@ export class EarthquakeListCard extends LitElement implements LovelaceCard {
   `;
 }
 
-customElements.define('earthquakelist-card', EarthquakeListCard);
+// An older install may still have a second Lovelace resource for this bundle.
+// customElements.define() throws on a duplicate name, which would take down
+// whichever copy loads second - card, editor and map alike.
+if (!customElements.get(ELEMENT_NAME)) {
+  customElements.define(ELEMENT_NAME, EarthquakeListCard);
+}
 
 window.customCards = window.customCards || [];
-window.customCards.push({
-  type: 'earthquakelist-card',
-  name: 'Earthquake List Card',
-  description: 'Display recent earthquakes for a monitored location, with a map and list.',
-  preview: true,
-  documentationURL: 'https://github.com/timmaurice/earthquakelist',
-  getEntitySuggestion: (hass, entityId) => {
-    if (hass.entities[entityId]?.platform !== 'earthquakelist') {
-      return null;
-    }
-    return {
-      config: { type: 'custom:earthquakelist-card', places: [entityId] },
-    };
-  },
-});
+if (!window.customCards.some((card) => card.type === ELEMENT_NAME)) {
+  window.customCards.push({
+    type: ELEMENT_NAME,
+    name: 'Earthquake List Card',
+    description: 'Display recent earthquakes for a monitored location, with a map and list.',
+    preview: true,
+    documentationURL: 'https://github.com/timmaurice/earthquakelist',
+    getEntitySuggestion: (hass, entityId) => {
+      if (hass.entities[entityId]?.platform !== 'earthquakelist') {
+        return null;
+      }
+      return {
+        config: { type: `custom:${ELEMENT_NAME}`, places: [entityId] },
+      };
+    },
+  });
+}

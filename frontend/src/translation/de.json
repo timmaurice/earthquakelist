@@ -15,6 +15,9 @@
     "distance": "Entfernung",
     "depth": "Tiefe",
     "no_data": "Noch keine Erdbebendaten",
+    "entity_not_found": "Entität {entity} nicht gefunden",
+    "entity_unavailable": "Sensor nicht verfügbar — keine Daten von earthquakelist.org",
+    "no_places_configured": "Wähle im Karten-Editor mindestens einen Ort aus.",
     "offshore": "Offshore",
     "felt_reports": "Gespürt von {count}",
     "read_more": "Mehr erfahren",
@@ -27,10 +30,5 @@
     "alert_orange": "Warnstufe Orange",
     "alert_red": "Warnstufe Rot",
     "tsunami_hint": "Großes Offshore-Beben, von USGS zur Tsunami-Bewertung markiert — keine bestätigte Warnung"
-  },
-  "common": {
-    "errors": {
-      "no_places": "Du musst mindestens einen Ort festlegen."
-    }
   }
 }

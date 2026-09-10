@@ -15,6 +15,9 @@
     "distance": "Distance",
     "depth": "Depth",
     "no_data": "No earthquake data yet",
+    "entity_not_found": "Entity {entity} not found",
+    "entity_unavailable": "Sensor unavailable — no data from earthquakelist.org",
+    "no_places_configured": "Pick at least one place in the card editor.",
     "offshore": "Offshore",
     "felt_reports": "Felt by {count}",
     "read_more": "Read more",
@@ -27,10 +30,5 @@
     "alert_orange": "Orange alert",
     "alert_red": "Red alert",
     "tsunami_hint": "Large offshore earthquake, flagged by USGS for tsunami evaluation — not a confirmed warning"
-  },
-  "common": {
-    "errors": {
-      "no_places": "You need to define at least one place."
-    }
   }
 }

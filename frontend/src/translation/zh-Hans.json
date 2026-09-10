@@ -15,6 +15,9 @@
     "distance": "距离",
     "depth": "深度",
     "no_data": "暂无地震数据",
+    "entity_not_found": "未找到实体 {entity}",
+    "entity_unavailable": "传感器不可用 — 无法从 earthquakelist.org 获取数据",
+    "no_places_configured": "请在卡片编辑器中至少选择一个地点。",
     "offshore": "海域",
     "felt_reports": "{count} 人有感",
     "read_more": "了解更多",
@@ -27,10 +30,5 @@
     "alert_orange": "橙色预警",
     "alert_red": "红色预警",
     "tsunami_hint": "大规模海域地震，USGS 标记为需评估海啸 — 并非已确认的警报"
-  },
-  "common": {
-    "errors": {
-      "no_places": "您需要至少定义一个地点。"
-    }
   }
 }

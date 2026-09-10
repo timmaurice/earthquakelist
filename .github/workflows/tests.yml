@@ -52,3 +52,11 @@ jobs:
 
       - name: Build card
         run: npm run build
+
+  # No e2e job on purpose. The Playwright suite (npm run test:e2e) drives a real Home
+  # Assistant in Docker and signs in as an existing admin, but `config/` is gitignored,
+  # so a fresh checkout has no onboarded instance for it to sign in to. Wiring it up
+  # means automating onboarding (create the admin, pick a country, skip analytics)
+  # before global-setup runs - worth doing, but its own change, not a test tweak.
+  # Until then test/e2e/* only ever runs locally: treat a green CI as covering the
+  # unit suites only.

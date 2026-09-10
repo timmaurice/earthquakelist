@@ -3,12 +3,11 @@
 from __future__ import annotations
 
 import logging
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 import voluptuous as vol
 from homeassistant import config_entries
 from homeassistant.core import callback
-from homeassistant.data_entry_flow import FlowResult
 from homeassistant.helpers import selector
 
 from .api import EarthquakeListAPI
@@ -24,6 +23,13 @@ from .const import (
     DOMAIN,
 )
 from .parser import SearchResult
+
+if TYPE_CHECKING:
+    # `ConfigFlowResult` is what current Home Assistant types config flows with;
+    # the older `data_entry_flow.FlowResult` is deprecated for this. Imported only
+    # for typing (annotations are lazy here) so the module still loads on the
+    # Home Assistant release the offline test environment pins.
+    from homeassistant.config_entries import ConfigFlowResult
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -58,7 +64,7 @@ class EarthquakeListConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 
     async def async_step_user(
         self, user_input: dict[str, Any] | None = None
-    ) -> FlowResult:
+    ) -> ConfigFlowResult:
         """Handle the location search step."""
         errors: dict[str, str] = {}
 
@@ -89,7 +95,7 @@ class EarthquakeListConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 
     async def async_step_select(
         self, user_input: dict[str, Any] | None = None
-    ) -> FlowResult:
+    ) -> ConfigFlowResult:
         """Handle place selection and the earthquake filter criteria."""
         errors: dict[str, str] = {}
 
@@ -156,7 +162,7 @@ class EarthquakeListOptionsFlow(config_entries.OptionsFlow):
 
     async def async_step_init(
         self, user_input: dict[str, Any] | None = None
-    ) -> FlowResult:
+    ) -> ConfigFlowResult:
         """Manage the earthquake filter options."""
         if user_input is not None:
             return self.async_create_entry(

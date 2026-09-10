@@ -15,6 +15,9 @@
     "distance": "距離",
     "depth": "深さ",
     "no_data": "地震データがまだありません",
+    "entity_not_found": "エンティティ {entity} が見つかりません",
+    "entity_unavailable": "センサーが利用できません — earthquakelist.org からデータを取得できませんでした",
+    "no_places_configured": "カードエディターで地域を1つ以上選択してください。",
     "offshore": "海域",
     "felt_reports": "{count} 人が体感",
     "read_more": "詳細を見る",
@@ -27,10 +30,5 @@
     "alert_orange": "警戒レベル 橙",
     "alert_red": "警戒レベル 赤",
     "tsunami_hint": "大規模な海域地震。USGS が津波評価の対象として指定 — 確定した警報ではありません"
-  },
-  "common": {
-    "errors": {
-      "no_places": "少なくとも1つの地域を指定してください。"
-    }
   }
 }
