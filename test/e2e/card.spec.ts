@@ -2,6 +2,7 @@ import { test, expect } from './fixtures/hass';
 import { removeState, setState, useDashboard } from './helpers/homeassistant';
 
 const ENTITY = 'sensor.e2e_card_earthquakes';
+const MISSING_ENTITY = 'sensor.e2e_card_not_here';
 
 /**
  * Mirrors what sensor.py's `_earthquake_to_dict` puts on the entity. Writing
@@ -31,6 +32,10 @@ const DASHBOARD = {
       cards: [{ type: 'custom:earthquakelist-card', places: [ENTITY], title: 'E2E quakes' }],
     },
     { title: 'Elsewhere', cards: [{ type: 'markdown', content: 'nothing here' }] },
+    {
+      title: 'Typo',
+      cards: [{ type: 'custom:earthquakelist-card', places: [MISSING_ENTITY], title: 'E2E typo' }],
+    },
   ],
 };
 
@@ -67,6 +72,18 @@ test.describe('The card on a real dashboard', () => {
     await expect(page.locator('earthquakelist-map .map-container')).toBeVisible({
       timeout: 60_000,
     });
+  });
+
+  test('names an entity that does not exist instead of reporting no data', async ({ page }) => {
+    // The three ways a place can render nothing - entity gone, sensor unavailable,
+    // nothing matched - used to be one and the same message, so a typo in the
+    // dashboard config was indistinguishable from a quiet region.
+    await page.goto(`/${urlPath}/2`);
+
+    const empty = page.locator('earthquakelist-card').locator('.empty-state');
+    await expect(empty).toBeVisible({ timeout: 60_000 });
+    await expect(empty).toContainText(MISSING_ENTITY);
+    await expect(empty).not.toContainText('No earthquake data yet');
   });
 
   test('comes back after leaving the view and returning', async ({ page }) => {
