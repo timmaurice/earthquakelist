@@ -17,6 +17,7 @@ from .const import (
     CONF_GEO_TYPE,
     CONF_MAX_DISTANCE,
     CONF_MIN_MAGNITUDE,
+    CONF_PLACE,
     DEFAULT_MAX_DISTANCE,
     DEFAULT_MIN_MAGNITUDE,
     DOMAIN,
@@ -124,11 +125,25 @@ async def async_setup(hass: HomeAssistant, config: dict) -> bool:
     return True
 
 
-async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
-    """Set up Earthquake List from a config entry."""
-    hass.data.setdefault(DOMAIN, {})
+def coordinator_name(entry: ConfigEntry) -> str:
+    """Name the coordinator after the monitored place.
 
-    api = EarthquakeListAPI(hass)
+    The name is what Home Assistant prints in "Error fetching <name> data", so
+    an opaque entry id there tells the user nothing about which of their
+    locations stopped updating.
+    """
+    place = entry.data.get(CONF_PLACE) or entry.title or entry.entry_id
+    return f"{DOMAIN} {place}"
+
+
+def build_update_method(api: EarthquakeListAPI, entry: ConfigEntry):
+    """Build the coordinator's fetch callback.
+
+    A module-level factory rather than a closure inside async_setup_entry so the
+    failure path stays directly testable: api.py deliberately stays quiet about
+    communication failures, so translating EarthquakeListApiError into
+    UpdateFailed here is the only thing that surfaces an outage at all.
+    """
     geo_type = entry.data[CONF_GEO_TYPE]
     geo_id = entry.data[CONF_GEO_ID]
 
@@ -150,11 +165,20 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         except EarthquakeListApiError as err:
             raise UpdateFailed(str(err)) from err
 
+    return async_update_data
+
+
+async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
+    """Set up Earthquake List from a config entry."""
+    hass.data.setdefault(DOMAIN, {})
+
+    api = EarthquakeListAPI(hass)
+
     coordinator = DataUpdateCoordinator(
         hass,
         _LOGGER,
-        name=f"earthquakelist_{entry.entry_id}",
-        update_method=async_update_data,
+        name=coordinator_name(entry),
+        update_method=build_update_method(api, entry),
         update_interval=SCAN_INTERVAL,
     )
 
