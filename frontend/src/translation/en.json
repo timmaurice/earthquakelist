@@ -15,6 +15,9 @@
     "distance": "Distance",
     "depth": "Depth",
     "no_data": "No earthquake data yet",
+    "entity_not_found": "Entity {entity} not found",
+    "entity_unavailable": "Sensor unavailable — no data from earthquakelist.org",
+    "no_places_configured": "Pick at least one place in the card editor.",
     "offshore": "Offshore",
     "felt_reports": "Felt by {count}",
     "read_more": "Read more",
@@ -30,7 +33,8 @@
   },
   "common": {
     "errors": {
-      "no_places": "You need to define at least one place."
+      "no_places": "You need to define at least one place.",
+      "invalid_entity": "{entity} is not a sensor entity."
     }
   }
 }

@@ -61,3 +61,14 @@ export function magnitudeSeverity(magnitude: number | undefined): 'minor' | 'lig
   if (magnitude >= 4) return 'light';
   return 'minor';
 }
+
+/**
+ * Whether a URL from the API is safe to put in an `href`.
+ *
+ * Lit does not sanitize attribute bindings, so a `javascript:` link coming from
+ * the (undocumented, third-party) API would end up clickable. Only absolute
+ * http(s) URLs are accepted — the same guard the map popup applies.
+ */
+export function isSafeUrl(url: string | undefined | null): url is string {
+  return typeof url === 'string' && /^https?:\/\//i.test(url);
+}

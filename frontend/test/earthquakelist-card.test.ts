@@ -24,9 +24,44 @@ describe('EarthquakeListCard', () => {
     expect(customElements.get('earthquakelist-card')).toBeDefined();
   });
 
-  it('throws if no places are configured', () => {
+  it('throws if places is missing entirely', () => {
     const card = new EarthquakeListCard();
-    expect(() => card.setConfig({ type: 'custom:earthquakelist-card', places: [] })).toThrow();
+    expect(() => card.setConfig({ type: 'custom:earthquakelist-card' } as EarthquakeListCardConfig)).toThrow();
+  });
+
+  it('throws for a place that is not a sensor entity', () => {
+    const card = new EarthquakeListCard();
+    expect(() => card.setConfig({ type: 'custom:earthquakelist-card', places: ['sun.sun'] })).toThrow('sun.sun');
+  });
+
+  it('accepts the stub config the card picker builds, so the preview is not an error tile', () => {
+    const entityId = 'sensor.earthquakelist_corfu_latest_earthquake';
+    const hass = makeHass({
+      entities: { [entityId]: { entity_id: entityId, platform: 'earthquakelist' } },
+    });
+
+    const stub = EarthquakeListCard.getStubConfig(hass, [entityId, 'sun.sun']);
+
+    expect(stub.places).toEqual([entityId]);
+    expect(() => new EarthquakeListCard().setConfig(stub)).not.toThrow();
+  });
+
+  it('renders a hint instead of throwing when the stub config found no entity', async () => {
+    const stub = EarthquakeListCard.getStubConfig();
+    expect(stub.places).toEqual([]);
+
+    const card = new EarthquakeListCard();
+    card.hass = makeHass();
+    expect(() => card.setConfig(stub)).not.toThrow();
+    document.body.appendChild(card);
+    await card.updateComplete;
+
+    expect(card.shadowRoot?.querySelector('.empty-state')?.textContent).toContain('Pick at least one place');
+  });
+
+  it('reports grid options so a sections dashboard can size the map', () => {
+    const card = new EarthquakeListCard();
+    expect(card.getGridOptions()).toEqual({ columns: 12, rows: 'auto', min_columns: 6, min_rows: 3 });
   });
 
   it('applies default show_map/show_list/max_list_items', () => {
@@ -358,15 +393,64 @@ describe('EarthquakeListCard', () => {
     expect(map.earthquakes[0].place).toBe('Place 0');
   });
 
-  it('shows an empty state for an unavailable entity', async () => {
-    const entityId = 'sensor.earthquakelist_missing';
+  it('names the entity when it does not exist, instead of claiming there is no data', async () => {
+    const entityId = 'sensor.earthquakelist_typo';
     const card = new EarthquakeListCard();
     card.hass = makeHass();
     card.setConfig({ type: 'custom:earthquakelist-card', places: [entityId] });
     document.body.appendChild(card);
     await card.updateComplete;
 
-    expect(card.shadowRoot?.querySelector('.empty-state')).not.toBeNull();
+    const empty = card.shadowRoot?.querySelector('.empty-state');
+    expect(empty?.textContent).toContain(entityId);
+    expect(empty?.textContent).not.toContain('No earthquake data yet');
+    expect(empty?.classList.contains('error')).toBe(true);
+  });
+
+  it('says the sensor is unavailable rather than empty when the upstream fetch failed', async () => {
+    const entityId = 'sensor.earthquakelist_corfu_latest_earthquake';
+    const card = new EarthquakeListCard();
+    card.hass = makeHass({
+      states: {
+        [entityId]: {
+          entity_id: entityId,
+          state: 'unavailable',
+          last_changed: '',
+          last_updated: '',
+          attributes: { monitored_place: 'Corfu' },
+        },
+      },
+    });
+    card.setConfig({ type: 'custom:earthquakelist-card', places: [entityId] });
+    document.body.appendChild(card);
+    await card.updateComplete;
+
+    const empty = card.shadowRoot?.querySelector('.empty-state');
+    expect(empty?.textContent).toContain('unavailable');
+    expect(empty?.textContent).not.toContain('No earthquake data yet');
+  });
+
+  it('keeps the plain empty state for a sensor that simply matched nothing', async () => {
+    const entityId = 'sensor.earthquakelist_corfu_latest_earthquake';
+    const card = new EarthquakeListCard();
+    card.hass = makeHass({
+      states: {
+        [entityId]: {
+          entity_id: entityId,
+          state: 'unknown',
+          last_changed: '',
+          last_updated: '',
+          attributes: { monitored_place: 'Corfu' },
+        },
+      },
+    });
+    card.setConfig({ type: 'custom:earthquakelist-card', places: [entityId] });
+    document.body.appendChild(card);
+    await card.updateComplete;
+
+    const empty = card.shadowRoot?.querySelector('.empty-state');
+    expect(empty?.textContent).toContain('No earthquake data yet');
+    expect(empty?.classList.contains('error')).toBe(false);
   });
 
   it('shows offshore and felt-report info in the summary and list-item meta', async () => {
@@ -453,6 +537,37 @@ describe('EarthquakeListCard', () => {
           last_changed: '',
           last_updated: '',
           attributes: { monitored_place: 'Japan', place: 'Naha', time: '2026-07-02T00:00:00+00:00' },
+        },
+      },
+    });
+    card.setConfig({ type: 'custom:earthquakelist-card', places: [entityId], show_map: false });
+    document.body.appendChild(card);
+    await card.updateComplete;
+
+    expect(card.shadowRoot?.querySelector('a.news-link')).toBeNull();
+  });
+
+  it('drops a news link whose URL is not http(s)', async () => {
+    const entityId = 'sensor.earthquakelist_japan_latest_earthquake';
+    const card = new EarthquakeListCard();
+    card.hass = makeHass({
+      states: {
+        [entityId]: {
+          entity_id: entityId,
+          state: '6.1',
+          last_changed: '',
+          last_updated: '',
+          attributes: {
+            monitored_place: 'Japan',
+            earthquakes: [
+              {
+                magnitude: 6.1,
+                place: 'Naha',
+                time: '2026-07-02T00:00:00+00:00',
+                news_link: 'javascript:alert(1)',
+              },
+            ],
+          },
         },
       },
     });
