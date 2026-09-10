@@ -37,7 +37,9 @@ export interface EarthquakeListItem {
   depth_km?: number;
   distance_km?: number;
   direction?: string;
-  alert_level?: string;
+  // The API sends false rather than null when there is no alert level, and the
+  // card is handed whatever the sensor exposes - so this is not just a string.
+  alert_level?: string | false | null;
   alert_tsunami?: boolean;
   mmi?: number;
   felt?: number;
