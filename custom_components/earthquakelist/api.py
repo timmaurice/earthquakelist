@@ -20,6 +20,10 @@ from .parser import (
 
 _LOGGER = logging.getLogger(__name__)
 
+# The API is a small JSON endpoint; without an explicit timeout a hung connection
+# would stall a poll until whatever the shared session happens to default to.
+REQUEST_TIMEOUT = aiohttp.ClientTimeout(total=15)
+
 
 class EarthquakeListApiError(Exception):
     """Raised when the earthquakelist.org API cannot be reached or fails."""
@@ -43,8 +47,12 @@ class EarthquakeListAPI:
         if not query:
             return []
 
-        payload = await self._request({"action": "search", "query": query})
-        if payload is None:
+        try:
+            payload = await self._request({"action": "search", "query": query})
+        except EarthquakeListApiError as err:
+            # The config flow turns None into its cannot_connect error and shows it
+            # to the user, so there is nothing to log at error level here.
+            _LOGGER.debug("Location search failed: %s", err)
             return None
 
         return parse_search_results(payload.get("data"))
@@ -74,30 +82,35 @@ class EarthquakeListAPI:
                 "min_magnitude": min_magnitude,
             }
         )
-        if payload is None:
-            raise EarthquakeListApiError(
-                f"Failed to fetch earthquakes for {geo_type}/{geo_id}"
-            )
 
         return parse_earthquakes(payload.get("data"))
 
-    async def _request(self, params: dict[str, Any]) -> dict[str, Any] | None:
-        """Perform a GET request against the earthquakelist.org API."""
+    async def _request(self, params: dict[str, Any]) -> dict[str, Any]:
+        """Perform a GET request against the earthquakelist.org API.
+
+        Raises EarthquakeListApiError instead of logging: the coordinator logs the
+        first failure and stays quiet afterwards, so logging here as well turned a
+        long outage into an error line every 15 minutes.
+        """
         session = async_get_clientsession(self.hass)
         try:
             async with session.get(
-                API_URL, params=params, headers=self._headers
+                API_URL,
+                params=params,
+                headers=self._headers,
+                timeout=REQUEST_TIMEOUT,
             ) as response:
                 response.raise_for_status()
                 # The API serves JSON with a text/html content type, so the
                 # mimetype check in aiohttp's response.json() must be disabled.
                 data = await response.json(content_type=None)
         except (aiohttp.ClientError, TimeoutError) as err:
-            _LOGGER.error("Error communicating with earthquakelist.org: %s", err)
-            return None
+            raise EarthquakeListApiError(
+                f"Error communicating with earthquakelist.org: {err}"
+            ) from err
 
         if not isinstance(data, dict) or not data.get("success"):
             _LOGGER.debug("Unexpected earthquakelist.org response: %s", data)
-            return None
+            raise EarthquakeListApiError("Unexpected response from earthquakelist.org")
 
         return data
