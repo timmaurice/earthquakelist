@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import logging
 from contextlib import contextmanager
 from pathlib import Path
 from types import SimpleNamespace
@@ -8,7 +9,11 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
-from custom_components.earthquakelist.api import EarthquakeListAPI, EarthquakeListApiError
+from custom_components.earthquakelist.api import (
+    REQUEST_TIMEOUT,
+    EarthquakeListAPI,
+    EarthquakeListApiError,
+)
 
 FIXTURES_DIR = Path(__file__).parent / "fixtures"
 pytestmark = pytest.mark.asyncio
@@ -125,4 +130,80 @@ async def test_get_earthquakes_raises_on_client_error(mock_hass) -> None:
         return_value=mock_session,
     ):
         with pytest.raises(EarthquakeListApiError):
+            await api.get_earthquakes("place", "2042", 3.0, 50)
+
+
+async def test_request_sets_an_explicit_timeout(mock_hass) -> None:
+    """A hung connection must not stall a poll for whatever the session defaults to."""
+    api = EarthquakeListAPI(mock_hass)
+
+    with _patch_session({"success": True, "data": []}) as (mock_session, _):
+        await api.get_earthquakes("place", "2042", 3.0, 50)
+
+    _, kwargs = mock_session.get.call_args
+    assert kwargs["timeout"] is REQUEST_TIMEOUT
+    assert kwargs["timeout"].total == 15
+
+
+async def test_communication_failures_are_not_logged_by_the_api(
+    mock_hass, caplog
+) -> None:
+    """The coordinator logs the first failure and then stays quiet.
+
+    api.py used to log an error of its own on every attempt, so a multi-hour
+    outage produced an error line every 15 minutes for the same problem.
+    """
+    import aiohttp
+
+    api = EarthquakeListAPI(mock_hass)
+
+    mock_session = MagicMock()
+    mock_session.get.side_effect = aiohttp.ClientError("boom")
+
+    with caplog.at_level(logging.DEBUG, logger="custom_components.earthquakelist.api"):
+        with patch(
+            "custom_components.earthquakelist.api.async_get_clientsession",
+            return_value=mock_session,
+        ):
+            with pytest.raises(EarthquakeListApiError, match="boom"):
+                await api.get_earthquakes("place", "2042", 3.0, 50)
+
+            assert await api.search_locations("corfu") is None
+
+    warnings = [
+        record for record in caplog.records if record.levelno >= logging.WARNING
+    ]
+    assert warnings == []
+
+
+async def test_get_earthquakes_raises_when_the_api_reports_failure(mock_hass) -> None:
+    """A syntactically fine response with success=false is still a failed fetch."""
+    api = EarthquakeListAPI(mock_hass)
+
+    with _patch_session({"success": False}):
+        with pytest.raises(EarthquakeListApiError):
+            await api.get_earthquakes("place", "2042", 3.0, 50)
+
+
+async def test_get_earthquakes_raises_when_the_body_is_not_json(mock_hass) -> None:
+    """An HTML error page served with a 200 is a failed fetch, not a crash.
+
+    response.json() raises a JSONDecodeError, which is a ValueError and not an
+    aiohttp.ClientError, so without its own except it escaped _request unwrapped.
+    """
+    api = EarthquakeListAPI(mock_hass)
+
+    mock_response = AsyncMock()
+    mock_response.json.side_effect = json.JSONDecodeError(
+        "Expecting value", "<html>", 0
+    )
+    mock_response.raise_for_status = MagicMock()
+    mock_session = MagicMock()
+    mock_session.get.return_value.__aenter__.return_value = mock_response
+
+    with patch(
+        "custom_components.earthquakelist.api.async_get_clientsession",
+        return_value=mock_session,
+    ):
+        with pytest.raises(EarthquakeListApiError, match="Malformed response"):
             await api.get_earthquakes("place", "2042", 3.0, 50)

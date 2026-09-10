@@ -311,4 +311,9 @@
 .empty-state {
   color: var(--secondary-text-color);
   font-style: italic;
+
+  // A configured entity that does not exist is a config error, not a quiet region.
+  &.error {
+    color: var(--error-color, #db4437);
+  }
 }
