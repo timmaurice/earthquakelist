@@ -20,6 +20,7 @@ const FIELD_LABELS: Record<string, string> = {
   // translation key existed in all eight files, it was just never mapped.
   max_map_markers: 'editor.max_map_markers',
   map_tile_source: 'editor.map_tile_source',
+  map_theme_mode: 'editor.map_theme_mode',
 };
 
 // The same table setConfig() applies, imported rather than copied: these fill the
@@ -62,6 +63,18 @@ function displaySchema(hass: HomeAssistant, showMap: boolean, showList: boolean)
                 options: (['auto', 'core', 'openfreemap'] as const).map((value) => ({
                   value,
                   label: localize(hass, `editor.map_tile_source_options.${value}`),
+                })),
+              },
+            },
+          },
+          {
+            name: 'map_theme_mode',
+            selector: {
+              select: {
+                mode: 'dropdown',
+                options: (['auto', 'light', 'dark'] as const).map((value) => ({
+                  value,
+                  label: localize(hass, `editor.map_theme_mode_options.${value}`),
                 })),
               },
             },
