@@ -15,6 +15,12 @@ import { isSafeUrl, magnitudeSeverity } from '../utils';
 import { localize } from '../localize';
 import { installMapLibreWorker } from '../maplibre-worker';
 
+type StyleWithUrls = {
+  glyphs?: unknown;
+  sprite?: unknown;
+  sources?: Record<string, Record<string, unknown>>;
+};
+
 const OPENFREEMAP_DARK_STYLE = 'https://tiles.openfreemap.org/styles/dark';
 const OPENFREEMAP_LIGHT_STYLE = 'https://tiles.openfreemap.org/styles/positron';
 
@@ -23,45 +29,21 @@ const OPENFREEMAP_LIGHT_STYLE = 'https://tiles.openfreemap.org/styles/positron';
 // bounding box around the user's home to a third party, with no way to turn it off.
 // `map_tiles` proxies OpenStreetMap through the user's own instance instead.
 //
-// Its *raster* endpoint is what we use, not the vector one. The integration ships no
-// ready-made MapLibre style (`/api/map_tiles/style.json` is a 404), so a vector map would
-// mean authoring a complete base map — water, landuse, roads, labels — against glyphs named
-// `noto_sans_regular` rather than the conventional `Noto Sans Regular` (the conventional
-// spelling 502s), and with no sprites at all (`sprites/default/sprite.json` is a 404). That
-// is a project of its own. Kept deliberately identical to the sibling
-// `lovelace-blitzortung-lightning-card`, whose map component this one shares its shape with.
+// Its *vector* endpoint is what we use. The proxy ships no style of its own
+// (`/api/map_tiles/style.json` is a 404), but Home Assistant itself serves complete MapLibre
+// styles at `/static/map/light.json` and `/static/map/dark.json` (versatiles-colorful and
+// versatiles-eclipse), which is what those are loaded from. Kept deliberately identical to the
+// sibling `lovelace-blitzortung-lightning-card`, whose map component this one shares its shape
+// with.
 const CORE_TILES_COMPONENT = 'map_tiles';
-const CORE_TILES_PATH = '/api/map_tiles/raster/{z}/{x}/{y}.png';
-const CORE_TILES_SOURCE_ID = 'ha-map-tiles';
-// The source's own ceiling, as declared by `/api/map_tiles/tilejson.json`. MapLibre still
-// zooms past it by scaling the z14 tile; declaring it is what stops the map from requesting
-// tiles that do not exist.
-const CORE_TILES_MAX_ZOOM = 14;
-// Also from that TileJSON. OpenStreetMap requires it to be displayed, and handing it to the
-// source is what puts it in the AttributionControl the map already has.
-const CORE_TILES_ATTRIBUTION = '© OpenStreetMap contributors';
+const CORE_TILES_LIGHT_STYLE = '/static/map/light.json';
+const CORE_TILES_DARK_STYLE = '/static/map/dark.json';
+// Everything the style then pulls — TileJSON, vector tiles, glyphs, sprites — lives under this
+// prefix, and every one of them is refused with 401 unless the request carries a token.
+const CORE_TILES_API_PREFIX = '/api/map_tiles/';
 // Tokens rotate every 30 minutes, with the previous one staying valid. Renewing well inside
 // that window means a tile request is never made with an expired token.
 const CORE_TILES_TOKEN_REFRESH_MS = 10 * 60 * 1000;
-
-// A minimal single-layer raster style. Token-free by design: the token rotates, so it is
-// appended per request in `_transformRequest` instead of being baked into the tile template.
-function buildCoreTilesStyle(): StyleSpecification {
-  return {
-    version: 8,
-    sources: {
-      [CORE_TILES_SOURCE_ID]: {
-        type: 'raster',
-        tiles: [CORE_TILES_PATH],
-        tileSize: 256,
-        minzoom: 0,
-        maxzoom: CORE_TILES_MAX_ZOOM,
-        attribution: CORE_TILES_ATTRIBUTION,
-      },
-    },
-    layers: [{ id: CORE_TILES_SOURCE_ID, type: 'raster', source: CORE_TILES_SOURCE_ID }],
-  };
-}
 
 // Re-enables auto-zoom after the user manually pans/zooms.
 class RecenterControl implements IControl {
@@ -185,12 +167,19 @@ export class EarthquakeListMap extends LitElement {
       return response.token;
     } catch (err) {
       this._coreTilesToken = null;
-      if (!this._coreTilesWarned) {
-        this._coreTilesWarned = true;
-        console.warn('[EarthquakeList Map] Could not get a map_tiles token; using OpenFreeMap tiles instead.', err);
-      }
+      this._warnCoreTilesFallback('Could not get a map_tiles token', err);
       return null;
     }
+  }
+
+  // Once per component, not once per failure: a token fetch that keeps failing would otherwise
+  // repeat this on every refresh interval for as long as the dashboard stays open.
+  private _warnCoreTilesFallback(message: string, err: unknown): void {
+    if (this._coreTilesWarned) {
+      return;
+    }
+    this._coreTilesWarned = true;
+    console.warn(`[EarthquakeList Map] ${message}; using OpenFreeMap tiles instead.`, err);
   }
 
   private _startCoreTilesTokenRefresh(): void {
@@ -212,12 +201,107 @@ export class EarthquakeListMap extends LitElement {
   // Reading the token here (rather than baking it into the tile template) means a renewal
   // takes effect on the next tile request without touching the style.
   private _transformRequest = (url: string): RequestParameters => {
-    if (this._coreTilesToken && url.includes('/api/map_tiles/')) {
-      const separator = url.includes('?') ? '&' : '?';
-      return { url: `${url}${separator}token=${encodeURIComponent(this._coreTilesToken)}` };
+    // Absolute first, unconditionally. `_resolveStyleUrls` only reaches URLs written in the
+    // style document; the tile templates MapLibre reads out of the proxy's TileJSON at runtime
+    // never pass through it and stay root-relative (`/api/map_tiles/vector/...`). Tile requests
+    // are handed to the Web Worker, which this card constructs from a Blob URL — and a `blob:`
+    // URL is a cannot-be-a-base URL, so resolving a relative URL against it throws
+    // `Failed to construct 'Request'` and every vector tile ends up `errored` with the map
+    // silently blank. This runs on the main thread, before the URL is passed to the worker, so
+    // absolutising here is what makes it resolvable there.
+    const absolute = this._toAbsoluteUrl(url);
+    if (this._coreTilesToken && this._isCoreTilesUrl(absolute)) {
+      const separator = absolute.includes('?') ? '&' : '?';
+      return { url: `${absolute}${separator}token=${encodeURIComponent(this._coreTilesToken)}` };
     }
-    return { url };
+    return { url: absolute };
   };
+
+  // Not just the tiles: the style's TileJSON, glyphs and sprites are all served from the same
+  // proxy and all 401 without a token. The path is what identifies them, not a prefix of the
+  // string — a third-party URL that merely mentions the proxy in its query must not be handed
+  // this instance's token.
+  private _isCoreTilesUrl(url: string): boolean {
+    try {
+      return new URL(url, document.baseURI).pathname.startsWith(CORE_TILES_API_PREFIX);
+    } catch {
+      return false;
+    }
+  }
+
+  /**
+   * Fetches Home Assistant's style and hands back a MapLibre-ready object, or null to mean
+   * "fall back to OpenFreeMap" — the same fallback a failed token gets, and warned the same
+   * once-per-component way.
+   *
+   * The style cannot simply be passed as a URL: MapLibre rejects relative URLs inside a style
+   * outright (`Invalid sprite URL "/api/map_tiles/sprites/basics/sprites"`) and stops loading,
+   * leaving an empty canvas with no tile, glyph or sprite request made. Home Assistant's own
+   * frontend resolves those paths before handing the style over; so does this.
+   */
+  private async _loadCoreTilesStyle(styleUrl: string): Promise<StyleSpecification | null> {
+    try {
+      const response = await fetch(styleUrl);
+      if (!response.ok) {
+        throw new Error(`${styleUrl} responded ${response.status}`);
+      }
+      return this._resolveStyleUrls(await response.json()) as StyleSpecification;
+    } catch (err) {
+      this._warnCoreTilesFallback(`Could not load the map_tiles style ${styleUrl}`, err);
+      return null;
+    }
+  }
+
+  /**
+   * Rewrites every instance-relative URL in a style to an absolute one: `glyphs`, `sprite`
+   * (a string or, as Home Assistant sends it, an array of `{id, url}`), each source's `url`,
+   * and any `tiles` a source lists directly.
+   */
+  private _resolveStyleUrls(style: StyleWithUrls): StyleWithUrls {
+    const resolved: StyleWithUrls = { ...style };
+
+    if (typeof style.glyphs === 'string') {
+      resolved.glyphs = this._toAbsoluteUrl(style.glyphs);
+    }
+    if (typeof style.sprite === 'string') {
+      resolved.sprite = this._toAbsoluteUrl(style.sprite);
+    } else if (Array.isArray(style.sprite)) {
+      resolved.sprite = style.sprite.map((entry: unknown) => {
+        const sprite = entry as { url?: unknown };
+        return typeof sprite?.url === 'string' ? { ...sprite, url: this._toAbsoluteUrl(sprite.url) } : entry;
+      });
+    }
+    if (style.sources && typeof style.sources === 'object') {
+      resolved.sources = Object.fromEntries(
+        Object.entries(style.sources).map(([id, source]) => {
+          const next = { ...source };
+          if (typeof next.url === 'string') {
+            next.url = this._toAbsoluteUrl(next.url);
+          }
+          if (Array.isArray(next.tiles)) {
+            next.tiles = next.tiles.map((tile: unknown) =>
+              typeof tile === 'string' ? this._toAbsoluteUrl(tile) : tile,
+            );
+          }
+          return [id, next];
+        }),
+      );
+    }
+
+    return resolved;
+  }
+
+  /**
+   * Resolves one style URL against this instance. Only paths are rewritten — an absolute URL
+   * or a `data:` URI is already resolvable and is handed back untouched.
+   *
+   * Concatenation, deliberately, not `new URL(path, origin)`: the URL constructor
+   * percent-encodes the placeholders MapLibre substitutes later, so `{fontstack}` becomes
+   * `%7Bfontstack%7D` and the glyph and tile requests 404.
+   */
+  private _toAbsoluteUrl(url: string): string {
+    return url.startsWith('/') ? `${window.location.origin}${url}` : url;
+  }
 
   private async _getMapLibre() {
     if (!this._maplibregl) {
@@ -384,14 +468,16 @@ export class EarthquakeListMap extends LitElement {
         this._startCoreTilesTokenRefresh();
       }
 
-      // OpenFreeMap ships a dark style; the proxied OSM raster only comes in light, so dark
-      // mode is a CSS filter over the canvas — the same trick Home Assistant's own map uses.
-      const style: StyleSpecification | string = useCoreTiles
-        ? buildCoreTilesStyle()
-        : darkMode
-          ? OPENFREEMAP_DARK_STYLE
-          : OPENFREEMAP_LIGHT_STYLE;
-      mapContainer.classList.toggle('inverted-tiles', useCoreTiles && darkMode);
+      // Awaited before the map is constructed: MapLibre takes the style once, at construction,
+      // and a style that arrives later would mean a visible restyle. A null here means the
+      // fetch failed and OpenFreeMap takes over, already warned about.
+      const coreStyle = useCoreTiles
+        ? await this._loadCoreTilesStyle(darkMode ? CORE_TILES_DARK_STYLE : CORE_TILES_LIGHT_STYLE)
+        : null;
+      if (!this.isConnected || this._map) return;
+
+      const style: StyleSpecification | string =
+        coreStyle ?? (darkMode ? OPENFREEMAP_DARK_STYLE : OPENFREEMAP_LIGHT_STYLE);
 
       this._map = new maplibregl.Map({
         container: mapContainer,

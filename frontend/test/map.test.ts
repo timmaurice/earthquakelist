@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, afterEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { EarthquakeListMap } from '../src/components/map';
 import { EarthquakeListItem, HomeAssistant } from '../src/types';
 
@@ -313,7 +313,34 @@ describe('EarthquakeListMap', () => {
   // regular fallback, not a dead branch. Mirrors the sibling blitzortung card's suite.
   describe('base map tiles', () => {
     const OPENFREEMAP = 'https://tiles.openfreemap.org/styles/';
-    const CORE_TILE_PATH = '/api/map_tiles/raster/{z}/{x}/{y}.png';
+
+    // Home Assistant's own style, shaped as HA 2026.9.1 serves it: every URL in it is an
+    // instance-relative path, which is exactly what MapLibre refuses to load. `name` carries
+    // the requested style URL so the theme tests can tell the two styles apart.
+    const haStyle = (styleUrl: string) => ({
+      version: 8,
+      name: styleUrl,
+      glyphs: '/api/map_tiles/fonts/{fontstack}/{range}.pbf',
+      sprite: [{ id: 'basics', url: '/api/map_tiles/sprites/basics/sprites' }],
+      sources: {
+        'versatiles-shortbread': { type: 'vector', url: '/api/map_tiles/tilejson.json' },
+        'third-party': { type: 'raster', tiles: ['https://example.invalid/{z}/{x}/{y}.png'] },
+      },
+      layers: [],
+    });
+
+    let fetchMock: ReturnType<typeof vi.fn>;
+    const stubStyleFetch = (impl: (url: string) => Promise<unknown>) => {
+      fetchMock = vi.fn((url: unknown) => impl(String(url)));
+      vi.stubGlobal('fetch', fetchMock);
+    };
+
+    beforeEach(() => {
+      stubStyleFetch(async (url) => ({ ok: true, status: 200, json: async () => haStyle(url) }));
+    });
+    afterEach(() => {
+      vi.unstubAllGlobals();
+    });
 
     const coreTilesHass = (overrides: Partial<HomeAssistant> = {}): HomeAssistant =>
       makeHass({
@@ -343,15 +370,36 @@ describe('EarthquakeListMap', () => {
       await mount(hass);
 
       expect(hass.callWS).toHaveBeenCalledWith({ type: 'map_tiles/access_token' });
-      const style = lastMapOptions().style as { sources: Record<string, Record<string, unknown>> };
+      expect(fetchMock).toHaveBeenCalledWith('/static/map/light.json');
+
+      const style = lastMapOptions().style as unknown as {
+        glyphs: string;
+        sprite: { id: string; url: string }[];
+        sources: Record<string, { url?: string; tiles?: string[] }>;
+      };
       expect(typeof style).toBe('object');
-      const source = Object.values(style.sources)[0]!;
-      expect(source.tiles).toEqual([CORE_TILE_PATH]);
-      // Declared, so MapLibre overzooms the z14 tile instead of requesting z15+ that 404s.
-      expect(source.maxzoom).toBe(14);
-      // OSM requires the attribution; putting it on the source is what feeds the
-      // AttributionControl the map already adds.
-      expect(source.attribution).toContain('OpenStreetMap');
+
+      // Every instance-relative URL has to come out absolute. MapLibre rejects a relative
+      // sprite URL outright, and a relative tile URL cannot be resolved inside the Blob-URL
+      // worker that parses vector tiles.
+      const origin = window.location.origin;
+      expect(style.glyphs).toBe(`${origin}/api/map_tiles/fonts/{fontstack}/{range}.pbf`);
+      expect(style.sprite[0]!.url).toBe(`${origin}/api/map_tiles/sprites/basics/sprites`);
+      expect(style.sources['versatiles-shortbread']!.url).toBe(`${origin}/api/map_tiles/tilejson.json`);
+      // A third-party URL is already resolvable and must not be rewritten.
+      expect(style.sources['third-party']!.tiles).toEqual(['https://example.invalid/{z}/{x}/{y}.png']);
+    });
+
+    it('falls back to OpenFreeMap when the style cannot be fetched', async () => {
+      const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+      try {
+        stubStyleFetch(async () => ({ ok: false, status: 404, json: async () => ({}) }));
+        await mount(coreTilesHass());
+        expect(lastMapOptions().style).toContain(OPENFREEMAP);
+        expect(warn).toHaveBeenCalledTimes(1);
+      } finally {
+        warn.mockRestore();
+      }
     });
 
     it('falls back to OpenFreeMap when map_tiles is not loaded', async () => {
@@ -383,12 +431,32 @@ describe('EarthquakeListMap', () => {
       await mount(coreTilesHass());
       const transformRequest = lastMapOptions().transformRequest!;
 
-      expect(transformRequest('http://ha.local/api/map_tiles/raster/3/4/2.png').url).toBe(
-        `http://ha.local/api/map_tiles/raster/3/4/2.png?token=${'a'.repeat(64)}`,
+      const token = 'a'.repeat(64);
+      const origin = window.location.origin;
+
+      expect(transformRequest('http://ha.local/api/map_tiles/vector/3/4/2.mvt').url).toBe(
+        `http://ha.local/api/map_tiles/vector/3/4/2.mvt?token=${token}`,
       );
+
+      // Regression: the proxy's TileJSON hands MapLibre root-relative tile templates, and
+      // MapLibre passes tile URLs to the Web Worker — which this card builds from a Blob URL,
+      // a cannot-be-a-base URL. A relative URL cannot be resolved against it, so every tile
+      // failed with `Failed to construct 'Request'` and the map stayed blank. Absolutising has
+      // to happen here, the last point on the main thread before the URL crosses over.
+      expect(transformRequest('/api/map_tiles/vector/3/4/2.mvt').url).toBe(
+        `${origin}/api/map_tiles/vector/3/4/2.mvt?token=${token}`,
+      );
+      expect(transformRequest('/local/whatever.png')).toEqual({ url: `${origin}/local/whatever.png` });
+
       // Anything that is not a proxy request is handed back untouched.
       expect(transformRequest('https://tiles.openfreemap.org/styles/positron')).toEqual({
         url: 'https://tiles.openfreemap.org/styles/positron',
+      });
+
+      // It is the path that has to match: a third-party URL merely mentioning the proxy in its
+      // query must not be handed this instance's token.
+      expect(transformRequest('https://example.invalid/x?next=/api/map_tiles/')).toEqual({
+        url: 'https://example.invalid/x?next=/api/map_tiles/',
       });
     });
 
@@ -431,16 +499,20 @@ describe('EarthquakeListMap', () => {
       expect(typeof lastMapOptions().style).toBe('object');
     });
 
-    it('inverts the proxied raster in dark mode, but never the vector OpenFreeMap style', async () => {
-      const dark = await mount(coreTilesHass({ themes: { darkMode: true } }));
-      expect(dark.shadowRoot!.querySelector('#map-container')!.classList.contains('inverted-tiles')).toBe(true);
+    // Dark mode used to be a CSS filter over the canvas, because the proxied raster came in
+    // light only. A real dark style replaces it — the map is restyled rather than recoloured.
+    it('loads the dark style in dark mode and the light one otherwise', async () => {
+      await mount(coreTilesHass({ themes: { darkMode: true } }));
+      expect(fetchMock).toHaveBeenCalledWith('/static/map/dark.json');
+      expect((lastMapOptions().style as unknown as { name: string }).name).toBe('/static/map/dark.json');
 
-      const light = await mount(coreTilesHass({ themes: { darkMode: false } }));
-      expect(light.shadowRoot!.querySelector('#map-container')!.classList.contains('inverted-tiles')).toBe(false);
+      await mount(coreTilesHass({ themes: { darkMode: false } }));
+      expect(fetchMock).toHaveBeenCalledWith('/static/map/light.json');
+      expect((lastMapOptions().style as unknown as { name: string }).name).toBe('/static/map/light.json');
 
-      // OpenFreeMap has a real dark style, so there is nothing to invert.
-      const openfreemap = await mount(makeHass({ themes: { darkMode: true } }));
-      expect(openfreemap.shadowRoot!.querySelector('#map-container')!.classList.contains('inverted-tiles')).toBe(false);
+      // OpenFreeMap ships its own pair of styles and never goes through the proxy.
+      await mount(makeHass({ themes: { darkMode: true } }));
+      expect(lastMapOptions().style).toBe('https://tiles.openfreemap.org/styles/dark');
     });
   });
 });
