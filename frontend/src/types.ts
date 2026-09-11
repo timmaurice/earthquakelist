@@ -38,6 +38,7 @@ export interface HomeAssistant {
  * `openfreemap` force one or the other.
  */
 export type MapTileSource = 'auto' | 'core' | 'openfreemap';
+export type MapThemeMode = 'auto' | 'light' | 'dark';
 
 export interface EarthquakeListItem {
   id?: string;
@@ -143,6 +144,7 @@ export interface EarthquakeListCardConfig extends LovelaceCardConfig {
   max_list_items?: number;
   max_map_markers?: number;
   map_tile_source?: MapTileSource;
+  map_theme_mode?: MapThemeMode;
 }
 
 declare global {

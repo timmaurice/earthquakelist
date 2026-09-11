@@ -14,6 +14,12 @@
       "auto": "自动（可用时使用 Home Assistant）",
       "core": "Home Assistant",
       "openfreemap": "OpenFreeMap"
+    },
+    "map_theme_mode": "地图主题",
+    "map_theme_mode_options": {
+      "auto": "自动（跟随 Home Assistant）",
+      "light": "浅色",
+      "dark": "深色"
     }
   },
   "card": {

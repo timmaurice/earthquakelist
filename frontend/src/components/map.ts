@@ -10,7 +10,7 @@ import type {
 } from 'maplibre-gl';
 import maplibreCss from 'maplibre-gl/dist/maplibre-gl.css';
 import mapStyles from '../styles/map-styles.scss';
-import { EarthquakeListItem, HomeAssistant, MapTileSource } from '../types';
+import { EarthquakeListItem, HomeAssistant, MapThemeMode, MapTileSource } from '../types';
 import { isSafeUrl, magnitudeSeverity } from '../utils';
 import { localize } from '../localize';
 import { installMapLibreWorker } from '../maplibre-worker';
@@ -90,12 +90,15 @@ export class EarthquakeListMap extends LitElement {
   @property({ attribute: false }) public hass!: HomeAssistant;
   @property({ attribute: false }) public earthquakes: EarthquakeListItem[] = [];
   @property({ attribute: false }) public tileSource: MapTileSource = 'auto';
+  @property({ attribute: false }) public themeMode: MapThemeMode = 'auto';
 
   private _map: MapLibreMap | undefined = undefined;
   private _quakeMarkers: Map<string, Marker> = new Map();
   private _maplibregl: typeof import('maplibre-gl') | undefined;
   private _resizeObserver: ResizeObserver | null = null;
   private _isInitializingMap = false;
+  // The light/dark choice the live map was built with, so a later theme change can be spotted.
+  private _builtDarkMode: boolean | undefined = undefined;
   private _userInteractedWithMap = false;
   private _recenterButton: HTMLAnchorElement | undefined;
   private _programmaticMapChange = false;
@@ -121,8 +124,15 @@ export class EarthquakeListMap extends LitElement {
       this._initMap();
       return;
     }
-    if (changedProperties.has('tileSource')) {
-      // The tile source is baked into the style at construction, so it takes a new map.
+    // The tile source and the light/dark style are both baked in at construction, so a change
+    // to either takes a new map. `_builtDarkMode` is what the current map was actually built
+    // with: on `auto` the trigger is Home Assistant's theme changing under us, which arrives as
+    // a new `hass` rather than as a changed property of our own.
+    if (
+      changedProperties.has('tileSource') ||
+      changedProperties.has('themeMode') ||
+      (this._builtDarkMode !== undefined && this._builtDarkMode !== this._darkMode)
+    ) {
       this._destroyMap();
       this._initMap();
       return;
@@ -130,6 +140,13 @@ export class EarthquakeListMap extends LitElement {
     if (changedProperties.has('earthquakes')) {
       this._updateMapMarkers();
     }
+  }
+
+  /** `themeMode` wins where it is set; `auto` follows Home Assistant's own theme. */
+  private get _darkMode(): boolean {
+    if (this.themeMode === 'dark') return true;
+    if (this.themeMode === 'light') return false;
+    return this.hass?.themes?.darkMode ?? false;
   }
 
   private _coreTilesInstalled(): boolean {
@@ -460,7 +477,8 @@ export class EarthquakeListMap extends LitElement {
       const currentContainer = this.shadowRoot?.querySelector('#map-container');
       if (!currentContainer || currentContainer !== mapContainer) return;
 
-      const darkMode = this.hass?.themes?.darkMode ?? false;
+      const darkMode = this._darkMode;
+      this._builtDarkMode = darkMode;
 
       const useCoreTiles = await this._useCoreTiles();
       if (!this.isConnected || this._map) return;
@@ -571,7 +589,7 @@ export class EarthquakeListMap extends LitElement {
           eq.magnitude !== undefined ? eq.magnitude.toFixed(1) : ''
         }</div>`;
 
-        const darkMode = this.hass?.themes?.darkMode ?? false;
+        const darkMode = this._darkMode;
         const popup = new maplibregl.Popup({
           offset: size / 2 + 4,
           className: darkMode ? 'eq-popup-dark' : 'eq-popup-light',
@@ -638,6 +656,7 @@ export class EarthquakeListMap extends LitElement {
     }
     this._stopCoreTilesTokenRefresh();
     this._coreTilesToken = null;
+    this._builtDarkMode = undefined;
     this._programmaticMapChange = false;
     if (this._map) {
       try {

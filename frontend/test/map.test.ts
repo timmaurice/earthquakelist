@@ -349,10 +349,15 @@ describe('EarthquakeListMap', () => {
         ...overrides,
       });
 
-    const mount = async (hass: HomeAssistant, tileSource?: 'auto' | 'core' | 'openfreemap') => {
+    const mount = async (
+      hass: HomeAssistant,
+      tileSource?: 'auto' | 'core' | 'openfreemap',
+      themeMode?: 'auto' | 'light' | 'dark',
+    ) => {
       const el = new EarthquakeListMap();
       el.hass = hass;
       if (tileSource) el.tileSource = tileSource;
+      if (themeMode) el.themeMode = themeMode;
       el.earthquakes = [makeQuake()];
       document.body.appendChild(el);
       await waitForMap(el);
@@ -497,6 +502,46 @@ describe('EarthquakeListMap', () => {
     it('forces the proxy when tileSource is core, even if map_tiles is not listed', async () => {
       await mount(makeHass({ callWS: vi.fn().mockResolvedValue({ token: 'b'.repeat(64) }) }), 'core');
       expect(typeof lastMapOptions().style).toBe('object');
+    });
+
+    // `map_theme_mode` pins the map's look for dashboards that stay on one; `auto` keeps
+    // following Home Assistant. The style is chosen at construction, so each of these is a
+    // separate map rather than a restyle of a live one.
+    it('lets map_theme_mode override Home Assistant, and follows it on auto', async () => {
+      const dunkleHass = () => coreTilesHass({ themes: { darkMode: true } });
+      const helleHass = () => coreTilesHass({ themes: { darkMode: false } });
+      const stil = () => (lastMapOptions().style as unknown as { name: string }).name;
+
+      // light wins over a dark Home Assistant, dark wins over a light one.
+      await mount(dunkleHass(), undefined, 'light');
+      expect(stil()).toBe('/static/map/light.json');
+      await mount(helleHass(), undefined, 'dark');
+      expect(stil()).toBe('/static/map/dark.json');
+
+      // auto defers to Home Assistant in both directions.
+      await mount(dunkleHass(), undefined, 'auto');
+      expect(stil()).toBe('/static/map/dark.json');
+      await mount(helleHass(), undefined, 'auto');
+      expect(stil()).toBe('/static/map/light.json');
+    });
+
+    // On `auto` the trigger is a new `hass`, not a changed property of the component's own, so
+    // a theme toggle would otherwise leave a dark dashboard showing the light map until reload.
+    it('rebuilds the map when Home Assistant switches theme under it', async () => {
+      const el = await mount(coreTilesHass({ themes: { darkMode: false } }), undefined, 'auto');
+      expect((lastMapOptions().style as unknown as { name: string }).name).toBe('/static/map/light.json');
+      const vorher = maplibreMock.Map.mock.calls.length;
+
+      el.hass = coreTilesHass({ themes: { darkMode: true } });
+      await waitForMap(el);
+      expect(maplibreMock.Map.mock.calls.length).toBeGreaterThan(vorher);
+      expect((lastMapOptions().style as unknown as { name: string }).name).toBe('/static/map/dark.json');
+
+      // A `hass` update that leaves the theme alone must not throw the map away.
+      const stabil = maplibreMock.Map.mock.calls.length;
+      el.hass = coreTilesHass({ themes: { darkMode: true } });
+      await el.updateComplete;
+      expect(maplibreMock.Map.mock.calls.length).toBe(stabil);
     });
 
     // Dark mode used to be a CSS filter over the canvas, because the proxied raster came in

@@ -20,6 +20,9 @@ export const CARD_DEFAULTS = {
   // `auto` prefers Home Assistant's own `map_tiles` proxy when that integration is loaded and
   // falls back to OpenFreeMap otherwise; `core` and `openfreemap` force one or the other.
   map_tile_source: 'auto',
+  // `auto` follows Home Assistant's own light/dark theme; `light` and `dark` pin the map
+  // regardless of it, for dashboards that stay on one look.
+  map_theme_mode: 'auto',
 } as const satisfies Partial<EarthquakeListCardConfig>;
 
 // The sensor never returns more than this, so the editor's selector stops here.

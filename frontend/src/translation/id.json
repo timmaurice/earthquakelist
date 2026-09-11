@@ -14,6 +14,12 @@
       "auto": "Otomatis (Home Assistant jika tersedia)",
       "core": "Home Assistant",
       "openfreemap": "OpenFreeMap"
+    },
+    "map_theme_mode": "Tema peta",
+    "map_theme_mode_options": {
+      "auto": "Otomatis (mengikuti Home Assistant)",
+      "light": "Terang",
+      "dark": "Gelap"
     }
   },
   "card": {

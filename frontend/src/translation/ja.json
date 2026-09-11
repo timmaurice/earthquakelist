@@ -14,6 +14,12 @@
       "auto": "自動 (利用可能なら Home Assistant)",
       "core": "Home Assistant",
       "openfreemap": "OpenFreeMap"
+    },
+    "map_theme_mode": "地図のテーマ",
+    "map_theme_mode_options": {
+      "auto": "自動 (Home Assistant に合わせる)",
+      "light": "ライト",
+      "dark": "ダーク"
     }
   },
   "card": {

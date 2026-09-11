@@ -235,6 +235,7 @@ export class EarthquakeListCard extends LitElement implements LovelaceCard {
                   .hass=${this.hass}
                   .earthquakes=${earthquakes.slice(0, this._config.max_map_markers ?? CARD_DEFAULTS.max_map_markers)}
                   .tileSource=${this._config.map_tile_source ?? CARD_DEFAULTS.map_tile_source}
+                  .themeMode=${this._config.map_theme_mode ?? CARD_DEFAULTS.map_theme_mode}
                 ></earthquakelist-map>
               </div>`
             : nothing

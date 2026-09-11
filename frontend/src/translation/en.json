@@ -14,6 +14,12 @@
       "auto": "Automatic (Home Assistant if available)",
       "core": "Home Assistant",
       "openfreemap": "OpenFreeMap"
+    },
+    "map_theme_mode": "Map theme",
+    "map_theme_mode_options": {
+      "auto": "Automatic (follow Home Assistant)",
+      "light": "Light",
+      "dark": "Dark"
     }
   },
   "card": {
