@@ -20,7 +20,8 @@
       "auto": "Automatic (follow Home Assistant)",
       "light": "Light",
       "dark": "Dark"
-    }
+    },
+    "map_lock": "Lock map interaction by default"
   },
   "card": {
     "tsunami_alert": "Tsunami possible",
@@ -37,6 +38,8 @@
     "show_details": "Show earthquake details",
     "recenter_map": "Recenter map and enable auto-zoom",
     "autozoom_enabled": "Auto-zoom enabled",
+    "enable_map_interaction": "Enable map interaction",
+    "disable_map_interaction": "Disable map interaction",
     "previous_earthquakes": "Previous Earthquakes",
     "alert_yellow": "Yellow alert",
     "alert_orange": "Orange alert",

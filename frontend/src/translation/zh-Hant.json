@@ -20,7 +20,8 @@
       "auto": "自動（跟隨 Home Assistant）",
       "light": "淺色",
       "dark": "深色"
-    }
+    },
+    "map_lock": "預設鎖定地圖互動"
   },
   "card": {
     "tsunami_alert": "可能引發海嘯",
@@ -37,6 +38,8 @@
     "show_details": "顯示地震詳細資訊",
     "recenter_map": "重新置中地圖並啟用自動縮放",
     "autozoom_enabled": "自動縮放已啟用",
+    "enable_map_interaction": "啟用地圖互動",
+    "disable_map_interaction": "停用地圖互動",
     "previous_earthquakes": "先前的地震",
     "alert_yellow": "黃色警報",
     "alert_orange": "橙色警報",

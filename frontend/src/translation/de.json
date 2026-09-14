@@ -20,7 +20,8 @@
       "auto": "Automatisch (Home Assistant folgen)",
       "light": "Hell",
       "dark": "Dunkel"
-    }
+    },
+    "map_lock": "Karteninteraktion standardmäßig sperren"
   },
   "card": {
     "tsunami_alert": "Tsunami möglich",
@@ -37,6 +38,8 @@
     "show_details": "Erdbeben-Details anzeigen",
     "recenter_map": "Karte neu zentrieren und Auto-Zoom aktivieren",
     "autozoom_enabled": "Auto-Zoom aktiv",
+    "enable_map_interaction": "Karteninteraktion aktivieren",
+    "disable_map_interaction": "Karteninteraktion deaktivieren",
     "previous_earthquakes": "Vorherige Erdbeben",
     "alert_yellow": "Warnstufe Gelb",
     "alert_orange": "Warnstufe Orange",

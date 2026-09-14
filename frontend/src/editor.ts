@@ -21,6 +21,7 @@ const FIELD_LABELS: Record<string, string> = {
   max_map_markers: 'editor.max_map_markers',
   map_tile_source: 'editor.map_tile_source',
   map_theme_mode: 'editor.map_theme_mode',
+  map_lock: 'editor.map_lock',
 };
 
 // The same table setConfig() applies, imported rather than copied: these fill the
@@ -79,6 +80,7 @@ function displaySchema(hass: HomeAssistant, showMap: boolean, showList: boolean)
               },
             },
           },
+          { name: 'map_lock', selector: { boolean: {} } },
         ]
       : []),
     { name: 'show_list', selector: { boolean: {} } },

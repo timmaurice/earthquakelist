@@ -20,7 +20,8 @@
       "auto": "自動 (Home Assistant に合わせる)",
       "light": "ライト",
       "dark": "ダーク"
-    }
+    },
+    "map_lock": "既定で地図の操作をロックする"
   },
   "card": {
     "tsunami_alert": "津波の可能性",
@@ -37,6 +38,8 @@
     "show_details": "地震の詳細を表示",
     "recenter_map": "地図を再センタリングして自動ズームを有効にする",
     "autozoom_enabled": "自動ズーム有効",
+    "enable_map_interaction": "地図の操作を有効にする",
+    "disable_map_interaction": "地図の操作を無効にする",
     "previous_earthquakes": "以前の地震",
     "alert_yellow": "警戒レベル 黄",
     "alert_orange": "警戒レベル 橙",

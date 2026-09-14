@@ -20,7 +20,8 @@
       "auto": "Otomatis (mengikuti Home Assistant)",
       "light": "Terang",
       "dark": "Gelap"
-    }
+    },
+    "map_lock": "Kunci interaksi peta secara bawaan"
   },
   "card": {
     "tsunami_alert": "Kemungkinan tsunami",
@@ -37,6 +38,8 @@
     "show_details": "Tampilkan detail gempa bumi",
     "recenter_map": "Pusatkan ulang peta dan aktifkan zoom otomatis",
     "autozoom_enabled": "Zoom otomatis aktif",
+    "enable_map_interaction": "Aktifkan interaksi peta",
+    "disable_map_interaction": "Nonaktifkan interaksi peta",
     "previous_earthquakes": "Gempa Bumi Sebelumnya",
     "alert_yellow": "Peringatan kuning",
     "alert_orange": "Peringatan oranye",

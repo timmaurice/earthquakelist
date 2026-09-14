@@ -1,5 +1,5 @@
 import { LitElement, html } from 'lit';
-import { property } from 'lit/decorators.js';
+import { property, state } from 'lit/decorators.js';
 import type {
   Map as MapLibreMap,
   Marker,
@@ -45,44 +45,63 @@ const CORE_TILES_API_PREFIX = '/api/map_tiles/';
 // that window means a tile request is never made with an expired token.
 const CORE_TILES_TOKEN_REFRESH_MS = 10 * 60 * 1000;
 
-// Re-enables auto-zoom after the user manually pans/zooms.
-class RecenterControl implements IControl {
+// Recenter (re-enables auto-zoom after a manual pan) and the interaction lock, kept in one
+// control group so they don't stack separate margins and rounded shells on a short map.
+// Locking stops the map's drag/zoom gestures, so a swipe over it scrolls the dashboard.
+class MapToolsControl implements IControl {
   private _container: HTMLElement | undefined;
-  private _link: HTMLAnchorElement | undefined;
+  private _recenterLink: HTMLAnchorElement | undefined;
+  private _lockLink: HTMLAnchorElement | undefined;
 
   constructor(
-    private readonly onClick: () => void,
-    private readonly ariaLabel: string,
+    private readonly onRecenter: () => void,
+    private readonly onToggleLock: () => void,
+    private readonly recenterLabel: string,
   ) {}
 
   onAdd(): HTMLElement {
     const container = document.createElement('div');
     container.className = 'maplibregl-ctrl maplibregl-ctrl-group';
 
+    this._recenterLink = this._addButton(container, 'recenter-button', 'mdi:crosshairs-gps', this.onRecenter);
+    this._recenterLink.setAttribute('aria-label', this.recenterLabel);
+    this._lockLink = this._addButton(container, 'lock-button', 'mdi:lock-open-variant', this.onToggleLock);
+
+    this._container = container;
+    return container;
+  }
+
+  private _addButton(container: HTMLElement, className: string, icon: string, onClick: () => void): HTMLAnchorElement {
     const link = document.createElement('a');
-    link.className = 'recenter-button';
+    link.className = className;
     link.href = '#';
-    link.innerHTML = `<ha-icon icon="mdi:crosshairs-gps"></ha-icon>`;
+    link.innerHTML = `<ha-icon icon="${icon}"></ha-icon>`;
     link.setAttribute('role', 'button');
-    link.setAttribute('aria-label', this.ariaLabel);
     link.addEventListener('click', (e) => {
       e.preventDefault();
       e.stopPropagation();
-      this.onClick();
+      onClick();
     });
-
     container.appendChild(link);
-    this._container = container;
-    this._link = link;
-    return container;
+    return link;
   }
 
   onRemove(): void {
     this._container?.remove();
   }
 
-  getLink(): HTMLAnchorElement | undefined {
-    return this._link;
+  getRecenterLink(): HTMLAnchorElement | undefined {
+    return this._recenterLink;
+  }
+
+  // The label names the action the click performs, not the state it is in.
+  setLocked(isLocked: boolean, label: string): void {
+    if (!this._lockLink) return;
+    this._lockLink.classList.toggle('active', isLocked);
+    this._lockLink.setAttribute('aria-label', label);
+    this._lockLink.setAttribute('aria-pressed', String(isLocked));
+    this._lockLink.title = label;
+    this._lockLink.querySelector('ha-icon')?.setAttribute('icon', isLocked ? 'mdi:lock' : 'mdi:lock-open-variant');
   }
 }
 
@@ -91,7 +110,10 @@ export class EarthquakeListMap extends LitElement {
   @property({ attribute: false }) public earthquakes: EarthquakeListItem[] = [];
   @property({ attribute: false }) public tileSource: MapTileSource = 'auto';
   @property({ attribute: false }) public themeMode: MapThemeMode = 'auto';
+  /** Where the lock starts; the toggle button owns it from there until the config changes. */
+  @property({ attribute: false }) public locked = false;
 
+  @state() private _isLocked = false;
   private _map: MapLibreMap | undefined = undefined;
   private _quakeMarkers: Map<string, Marker> = new Map();
   private _maplibregl: typeof import('maplibre-gl') | undefined;
@@ -101,6 +123,7 @@ export class EarthquakeListMap extends LitElement {
   private _builtDarkMode: boolean | undefined = undefined;
   private _userInteractedWithMap = false;
   private _recenterButton: HTMLAnchorElement | undefined;
+  private _mapTools: MapToolsControl | undefined;
   private _programmaticMapChange = false;
   private _programmaticChangeSettleTimer: number | undefined;
   private _hasAutoZoomedOnce = false;
@@ -120,6 +143,12 @@ export class EarthquakeListMap extends LitElement {
 
   protected updated(changedProperties: Map<string | number | symbol, unknown>): void {
     super.updated(changedProperties);
+    // A config change wins over a per-view toggle, or editing the card would leave the map
+    // contradicting the setting just saved.
+    if (changedProperties.has('locked')) {
+      this._isLocked = this.locked;
+      this._applyLockedState();
+    }
     if (!this._map) {
       this._initMap();
       return;
@@ -451,6 +480,36 @@ export class EarthquakeListMap extends LitElement {
     }, 150);
   }
 
+  private _toggleLocked = (): void => {
+    this._isLocked = !this._isLocked;
+    this._applyLockedState();
+  };
+
+  // Disables MapLibre's camera handlers rather than `pointer-events: none` on the container:
+  // the controls live in there too, and a locked map should still answer a tap on a marker.
+  private _applyLockedState(): void {
+    if (!this._map) return;
+
+    const handlers = [
+      this._map.dragPan,
+      this._map.scrollZoom,
+      this._map.doubleClickZoom,
+      this._map.touchZoomRotate,
+      this._map.touchPitch,
+      this._map.dragRotate,
+      this._map.boxZoom,
+      this._map.keyboard,
+    ];
+    handlers.forEach((handler) => (this._isLocked ? handler.disable() : handler.enable()));
+
+    // MapLibre keeps its grab cursor whatever the handlers do; the class drops it.
+    this._map.getContainer().classList.toggle('map-locked', this._isLocked);
+    this._mapTools?.setLocked(
+      this._isLocked,
+      localize(this.hass, this._isLocked ? 'card.enable_map_interaction' : 'card.disable_map_interaction'),
+    );
+  }
+
   private _handleMapMoveEnd = (): void => {
     if (this._programmaticMapChange) {
       this._scheduleProgrammaticMapChangeClear();
@@ -527,16 +586,19 @@ export class EarthquakeListMap extends LitElement {
       this._map.on('dragstart', markUserInteracted);
       this._map.on('moveend', this._handleMapMoveEnd);
 
-      const recenterControl = new RecenterControl(
+      const toolsControl = new MapToolsControl(
         () => {
           this._userInteractedWithMap = false;
           this._updateMapMarkers();
           this._updateRecenterButtonState();
         },
+        this._toggleLocked,
         localize(this.hass, 'card.recenter_map'),
       );
-      this._map.addControl(recenterControl, 'top-left');
-      this._recenterButton = recenterControl.getLink();
+      this._map.addControl(toolsControl, 'top-left');
+      this._mapTools = toolsControl;
+      this._recenterButton = toolsControl.getRecenterLink();
+      this._applyLockedState();
 
       if (typeof ResizeObserver !== 'undefined') {
         this._resizeObserver = new ResizeObserver(() => {
@@ -667,6 +729,7 @@ export class EarthquakeListMap extends LitElement {
       this._map = undefined;
       this._quakeMarkers.clear();
       this._recenterButton = undefined;
+      this._mapTools = undefined;
       this._userInteractedWithMap = false;
       this._hasAutoZoomedOnce = false;
     }
