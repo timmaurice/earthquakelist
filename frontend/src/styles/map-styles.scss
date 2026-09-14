@@ -181,21 +181,46 @@
   overflow: hidden;
 }
 
+// MapLibre's grab cursor comes from its own `maplibregl-interactive` class and survives the
+// handlers being disabled, so a locked map would keep promising a drag.
+.map-container.map-locked .maplibregl-canvas-container {
+  cursor: default;
+}
+
+// Just under MapLibre's 29px default: the stacked controls crowd a map this short, and much
+// smaller than this is hard to hit.
+.maplibregl-ctrl-group button {
+  height: 27px;
+  width: 27px;
+
+  .maplibregl-ctrl-icon {
+    background-size: 20px 20px;
+  }
+}
+
 // Brand green instead of HA's theme --primary-color.
-.maplibregl-ctrl-group a.recenter-button {
+.maplibregl-ctrl-group a.recenter-button,
+.maplibregl-ctrl-group a.lock-button {
+  --mdc-icon-size: 18px;
+
   align-items: center;
   background-color: color-mix(in srgb, var(--eq-brand-green, #6b8d63) 15%, transparent);
   color: var(--eq-brand-green, #6b8d63);
   cursor: pointer;
   display: flex;
-  height: 29px;
+  height: 27px;
   justify-content: center;
-  width: 29px;
+  width: 27px;
 
   &.active {
     background-color: var(--eq-brand-green, #6b8d63);
     color: white;
   }
+}
+
+// MapLibre only draws its divider between `button` siblings, and these are anchors.
+.maplibregl-ctrl-group a.lock-button {
+  border-top: 1px solid color-mix(in srgb, var(--eq-brand-green, #6b8d63) 30%, transparent);
 }
 
 @container (width < 250px) {
@@ -204,13 +229,15 @@
     height: auto;
 
     .maplibregl-ctrl-group button,
-    .maplibregl-ctrl-group a.recenter-button {
-      height: 20px;
-      line-height: 20px;
-      width: 20px;
+    .maplibregl-ctrl-group a.recenter-button,
+    .maplibregl-ctrl-group a.lock-button {
+      height: 22px;
+      line-height: 22px;
+      width: 22px;
     }
 
-    .maplibregl-ctrl-group a.recenter-button {
+    .maplibregl-ctrl-group a.recenter-button,
+    .maplibregl-ctrl-group a.lock-button {
       --mdc-icon-size: 16px;
       line-height: 16px;
     }

@@ -23,6 +23,8 @@ export const CARD_DEFAULTS = {
   // `auto` follows Home Assistant's own light/dark theme; `light` and `dark` pin the map
   // regardless of it, for dashboards that stay on one look.
   map_theme_mode: 'auto',
+  // Where the map's lock starts; its toggle button switches this per view.
+  map_lock: false,
 } as const satisfies Partial<EarthquakeListCardConfig>;
 
 // The sensor never returns more than this, so the editor's selector stops here.

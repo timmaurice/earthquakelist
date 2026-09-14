@@ -75,10 +75,21 @@ const { maplibreMock, mapInstanceMock } = vi.hoisted(() => {
     return marker;
   }
 
+  const makeHandlerMock = () => ({ enable: vi.fn(), disable: vi.fn() });
+
+  const mapContainerMock = document.createElement('div');
   const mapInstanceMock = {
     addControl: vi.fn(),
     on: vi.fn(),
-    getContainer: vi.fn(() => document.createElement('div')),
+    getContainer: vi.fn(() => mapContainerMock),
+    dragPan: makeHandlerMock(),
+    scrollZoom: makeHandlerMock(),
+    doubleClickZoom: makeHandlerMock(),
+    touchZoomRotate: makeHandlerMock(),
+    touchPitch: makeHandlerMock(),
+    dragRotate: makeHandlerMock(),
+    boxZoom: makeHandlerMock(),
+    keyboard: makeHandlerMock(),
     off: vi.fn(),
     resize: vi.fn(),
     remove: vi.fn(),
@@ -138,6 +149,8 @@ async function waitForMap(el: EarthquakeListMap): Promise<void> {
 describe('EarthquakeListMap', () => {
   afterEach(() => {
     document.body.innerHTML = '';
+    // One container is shared by every map the mock hands out, so classes would leak between tests.
+    mapInstanceMock.getContainer().className = '';
     vi.clearAllMocks();
   });
 
@@ -254,6 +267,66 @@ describe('EarthquakeListMap', () => {
     await new Promise((resolve) => setTimeout(resolve, 0));
 
     expect((el as unknown as { _userInteractedWithMap: boolean })._userInteractedWithMap).toBe(false);
+  });
+
+  describe('interaction lock', () => {
+    const lockButton = (el: EarthquakeListMap) => el.shadowRoot?.querySelector('a.lock-button') as HTMLAnchorElement;
+
+    it('leaves the map interactive by default', async () => {
+      const el = new EarthquakeListMap();
+      el.hass = makeHass();
+      el.earthquakes = [makeQuake()];
+      document.body.appendChild(el);
+      await waitForMap(el);
+
+      expect(mapInstanceMock.dragPan.disable).not.toHaveBeenCalled();
+      expect(mapInstanceMock.dragPan.enable).toHaveBeenCalled();
+      expect(lockButton(el).getAttribute('aria-pressed')).toBe('false');
+      expect(lockButton(el).getAttribute('aria-label')).toBe('Disable map interaction');
+    });
+
+    it('disables every camera handler when the card is configured locked', async () => {
+      const el = new EarthquakeListMap();
+      el.hass = makeHass();
+      el.earthquakes = [makeQuake()];
+      el.locked = true;
+      document.body.appendChild(el);
+      await waitForMap(el);
+
+      expect(mapInstanceMock.dragPan.disable).toHaveBeenCalled();
+      expect(mapInstanceMock.scrollZoom.disable).toHaveBeenCalled();
+      expect(mapInstanceMock.touchZoomRotate.disable).toHaveBeenCalled();
+      expect(mapInstanceMock.keyboard.disable).toHaveBeenCalled();
+      expect(mapInstanceMock.getContainer().classList.contains('map-locked')).toBe(true);
+      expect(lockButton(el).getAttribute('aria-pressed')).toBe('true');
+      expect(lockButton(el).getAttribute('aria-label')).toBe('Enable map interaction');
+    });
+
+    it('re-enables interaction when the lock button is clicked', async () => {
+      const el = new EarthquakeListMap();
+      el.hass = makeHass();
+      el.earthquakes = [makeQuake()];
+      el.locked = true;
+      document.body.appendChild(el);
+      await waitForMap(el);
+
+      mapInstanceMock.dragPan.enable.mockClear();
+      lockButton(el).click();
+
+      expect(mapInstanceMock.dragPan.enable).toHaveBeenCalled();
+      expect(mapInstanceMock.getContainer().classList.contains('map-locked')).toBe(false);
+      expect(lockButton(el).getAttribute('aria-pressed')).toBe('false');
+    });
+
+    it('localizes the lock control instead of hardcoding English', async () => {
+      const el = new EarthquakeListMap();
+      el.hass = { ...makeHass(), language: 'de' } as HomeAssistant;
+      el.earthquakes = [makeQuake()];
+      document.body.appendChild(el);
+      await waitForMap(el);
+
+      expect(lockButton(el).getAttribute('aria-label')).toBe('Karteninteraktion deaktivieren');
+    });
   });
 
   it('tears down the map on disconnect', async () => {

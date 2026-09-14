@@ -145,6 +145,7 @@ export interface EarthquakeListCardConfig extends LovelaceCardConfig {
   max_map_markers?: number;
   map_tile_source?: MapTileSource;
   map_theme_mode?: MapThemeMode;
+  map_lock?: boolean;
 }
 
 declare global {
