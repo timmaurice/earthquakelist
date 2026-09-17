@@ -9,6 +9,7 @@ import {
   HomeAssistant,
   LovelaceCard,
   LovelaceCardEditor,
+  LovelaceGridOptions,
 } from './types';
 import { fireEvent, formatRelativeTime, isSafeUrl, magnitudeSeverity } from './utils';
 import { localize } from './localize';
@@ -80,8 +81,8 @@ export class EarthquakeListCard extends LitElement implements LovelaceCard {
 
   // Sections dashboards size cards in grid columns/rows; without this the map's fixed
   // height cannot be lined up with the rows around it.
-  public getGridOptions(): { columns: number; rows: number | 'auto'; min_columns: number; min_rows: number } {
-    return { columns: 12, rows: 'auto', min_columns: 6, min_rows: 3 };
+  public getGridOptions(): LovelaceGridOptions {
+    return { columns: 'full', min_columns: 6, rows: 'auto', min_rows: 3 };
   }
 
   private _resolvePlaces(): ResolvedPlace[] {

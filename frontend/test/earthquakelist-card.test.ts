@@ -79,7 +79,7 @@ describe('EarthquakeListCard', () => {
   // HA clamps the card to the min_columns reported here.
   it('reports grid options so a sections dashboard can size the map', () => {
     const card = new EarthquakeListCard();
-    expect(card.getGridOptions()).toEqual({ columns: 12, rows: 'auto', min_columns: 6, min_rows: 3 });
+    expect(card.getGridOptions()).toEqual({ columns: 'full', rows: 'auto', min_columns: 6, min_rows: 3 });
   });
 
   it('applies default show_map/show_list/max_list_items', () => {
