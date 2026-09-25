@@ -127,6 +127,72 @@ describe('EarthquakeListCard', () => {
     expect(text).toContain('45');
   });
 
+  describe('place name', () => {
+    const entityId = 'sensor.earthquakelist_corfu_latest_earthquake';
+
+    async function renderName(overrides: Partial<HomeAssistant>, attributes: Record<string, unknown>) {
+      const card = new EarthquakeListCard();
+      card.hass = makeHass({
+        states: {
+          [entityId]: { entity_id: entityId, state: '4.0', last_changed: '', last_updated: '', attributes },
+        },
+        ...overrides,
+      });
+      card.setConfig({ type: 'custom:earthquakelist-card', places: [entityId], show_map: false });
+      document.body.appendChild(card);
+      await card.updateComplete;
+      return card.shadowRoot?.querySelector('.place-name')?.textContent;
+    }
+
+    it('follows a renamed device through hass.formatEntityName', async () => {
+      const formatEntityName = vi.fn(() => 'Kerkyra');
+
+      const name = await renderName(
+        { entities: { [entityId]: { entity_id: entityId, device_id: 'dev1' } }, formatEntityName },
+        { monitored_place: 'Corfu', place: 'Corfu' },
+      );
+
+      expect(name).toBe('Kerkyra');
+      expect(formatEntityName).toHaveBeenCalledWith(expect.objectContaining({ entity_id: entityId }), {
+        type: 'device',
+      });
+    });
+
+    it('names a sensor with no data after its device, not after the full friendly name', async () => {
+      // With no match the sensor exposes no attributes of its own, so monitored_place
+      // is missing and friendly_name ("Corfu Latest Earthquake") used to take over.
+      const name = await renderName(
+        {
+          entities: { [entityId]: { entity_id: entityId, device_id: 'dev1' } },
+          formatEntityName: () => 'Corfu',
+        },
+        { friendly_name: 'Corfu Latest Earthquake' },
+      );
+
+      expect(name).toBe('Corfu');
+    });
+
+    it('falls back to monitored_place without the formatter or without a device', async () => {
+      expect(await renderName({}, { monitored_place: 'Corfu', friendly_name: 'Corfu Latest Earthquake' })).toBe(
+        'Corfu',
+      );
+      document.body.innerHTML = '';
+
+      const formatEntityName = vi.fn(() => '');
+      expect(
+        await renderName({ formatEntityName }, { monitored_place: 'Corfu', friendly_name: 'Corfu Latest Earthquake' }),
+      ).toBe('Corfu');
+      expect(formatEntityName).not.toHaveBeenCalled();
+    });
+
+    it('falls back to the friendly name, then the entity id', async () => {
+      expect(await renderName({}, { friendly_name: 'Corfu Latest Earthquake' })).toBe('Corfu Latest Earthquake');
+      document.body.innerHTML = '';
+
+      expect(await renderName({}, {})).toBe(entityId);
+    });
+  });
+
   it('fires hass-more-info with the entity id when the entity-info icon is clicked', async () => {
     const entityId = 'sensor.earthquakelist_corfu_latest_earthquake';
     const card = new EarthquakeListCard();

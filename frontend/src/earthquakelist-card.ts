@@ -90,6 +90,21 @@ export class EarthquakeListCard extends LitElement implements LovelaceCard {
     return this._config.places.filter(Boolean).map((entityId) => ({ entityId }));
   }
 
+  private _placeName(entityId: string): string {
+    const stateObj = this.hass.states[entityId];
+    if (!stateObj) return entityId;
+
+    // The device is named after the monitored place, and it is the name the user
+    // changes when they rename it - so ask for the device name the way the built-in
+    // cards do (HA 2026.4+). Only once the registry knows the device: before that the
+    // formatter has no context and would hand back the full friendly name instead.
+    const deviceName = this.hass.entities?.[entityId]?.device_id
+      ? this.hass.formatEntityName?.(stateObj, { type: 'device' })
+      : undefined;
+
+    return deviceName || stateObj.attributes.monitored_place || stateObj.attributes.friendly_name || entityId;
+  }
+
   private _earthquakesFor(entityId: string): EarthquakeListItem[] {
     const stateObj = this.hass.states[entityId];
     if (!stateObj) return [];
@@ -149,7 +164,7 @@ export class EarthquakeListCard extends LitElement implements LovelaceCard {
 
   private _renderPlace(place: ResolvedPlace): TemplateResult {
     const stateObj = this.hass.states[place.entityId];
-    const name = stateObj?.attributes.monitored_place ?? stateObj?.attributes.friendly_name ?? place.entityId;
+    const name = this._placeName(place.entityId);
     const earthquakes = this._earthquakesFor(place.entityId);
 
     // Three states that used to look identical: a typo'd/removed entity, a sensor whose
