@@ -70,7 +70,8 @@ SENSOR_DESCRIPTION = EarthquakeListSensorEntityDescription(
     # `entity.sensor.latest_earthquake.name` string in translations/, so the entity stayed
     # "Latest Earthquake" even with the UI in another language.
     translation_key="latest_earthquake",
-    icon="mdi:pulse",
+    # No `icon=` here: icons.json maps the translation_key to its icon, and a
+    # hardcoded one would override it (and put an `icon` state attribute back).
     state_class=SensorStateClass.MEASUREMENT,
 )
 
