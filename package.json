@@ -1,6 +1,6 @@
 {
   "name": "earthquakelist-card",
-  "version": "1.4.1",
+  "version": "1.5.0",
   "description": "A Lovelace card to display the latest earthquakes for a monitored location.",
   "homepage": "https://github.com/timmaurice/earthquakelist#readme",
   "bugs": {
