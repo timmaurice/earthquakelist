@@ -20,6 +20,10 @@ export interface FrontendLocaleData {
   time_format: '12' | '24' | 'system' | 'am_pm';
 }
 
+// Mirrors `EntityNameItem` in the frontend's src/common/entity/entity_name_config.ts.
+export type EntityNameItem =
+  { type: 'floor' | 'area' | 'parent_device' | 'device' | 'entity' } | { type: 'text'; text: string };
+
 // A basic representation of the Home Assistant object
 export interface HomeAssistant {
   states: { [entity_id: string]: HassEntity };
@@ -29,6 +33,13 @@ export interface HomeAssistant {
   language: string;
   locale: FrontendLocaleData;
   callWS: <T>(message: { type: string; [key: string]: unknown }) => Promise<T>;
+  // HA 2026.4+. Builds a name from the entity, device, area and floor registries the
+  // way the built-in cards do, so a renamed device shows up under its new name.
+  formatEntityName?: (
+    stateObj: HassEntity,
+    name: string | EntityNameItem | EntityNameItem[] | undefined,
+    options?: { separator?: string },
+  ) => string;
   themes?: {
     darkMode?: boolean;
     [key: string]: unknown;

@@ -30,6 +30,10 @@ from .parser import EarthquakeData
 
 _LOGGER = logging.getLogger(__name__)
 
+# The coordinator does all the fetching; the entities only read its data, so there
+# is nothing to serialise between them.
+PARALLEL_UPDATES = 0
+
 
 def _earthquake_to_dict(earthquake: EarthquakeData) -> dict[str, object]:
     """Convert an EarthquakeData record into a JSON-friendly dict for the card."""
