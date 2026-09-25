@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from importlib import import_module
 from types import SimpleNamespace
 from unittest.mock import AsyncMock
 
@@ -9,7 +10,11 @@ import pytest
 
 from homeassistant.helpers.update_coordinator import UpdateFailed
 
-from custom_components.earthquakelist import build_update_method, coordinator_name
+from custom_components.earthquakelist import (
+    PLATFORMS,
+    build_update_method,
+    coordinator_name,
+)
 from custom_components.earthquakelist.api import EarthquakeListApiError
 
 
@@ -85,3 +90,16 @@ def test_the_coordinator_name_falls_back_to_the_entry_title() -> None:
     del entry.data["place"]
 
     assert coordinator_name(entry) == "earthquakelist Corfu Earthquakes"
+
+
+@pytest.mark.parametrize("platform", PLATFORMS, ids=str)
+def test_every_platform_leaves_updates_unthrottled(platform) -> None:
+    """The coordinator fetches; the entities only read its data.
+
+    The parallel-updates quality-scale rule asks every platform to state its
+    limit rather than leave it to Home Assistant's default. A platform added
+    later has to make that call too, so this covers all of PLATFORMS.
+    """
+    module = import_module(f"custom_components.earthquakelist.{platform}")
+
+    assert module.PARALLEL_UPDATES == 0
