@@ -1,0 +1,9 @@
+{
+  "entity": {
+    "sensor": {
+      "latest_earthquake": {
+        "default": "mdi:pulse"
+      }
+    }
+  }
+}
