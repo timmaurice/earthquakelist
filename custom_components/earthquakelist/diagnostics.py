@@ -4,15 +4,14 @@ from __future__ import annotations
 
 from typing import Any
 
-from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 
-from .const import DOMAIN
+from . import EarthquakeConfigEntry
 from .sensor import _earthquake_to_dict
 
 
 async def async_get_config_entry_diagnostics(
-    hass: HomeAssistant, entry: ConfigEntry
+    hass: HomeAssistant, entry: EarthquakeConfigEntry
 ) -> dict[str, Any]:
     """Return diagnostics for a config entry.
 
@@ -20,7 +19,9 @@ async def async_get_config_entry_diagnostics(
     coordinator holds public earthquake records - which is exactly what a bug
     report about a stale or empty sensor needs.
     """
-    coordinator = hass.data.get(DOMAIN, {}).get(entry.entry_id)
+    # Home Assistant offers the download for an entry that failed to set up too,
+    # and runtime_data is only assigned once setup succeeds.
+    coordinator = getattr(entry, "runtime_data", None)
 
     diagnostics: dict[str, Any] = {
         "entry": {

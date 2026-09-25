@@ -7,7 +7,6 @@ from types import SimpleNamespace
 
 import pytest
 
-from custom_components.earthquakelist.const import DOMAIN
 from custom_components.earthquakelist.diagnostics import (
     async_get_config_entry_diagnostics,
 )
@@ -41,7 +40,8 @@ async def test_diagnostics_include_the_entry_and_the_coordinator_data() -> None:
         last_update_success=True,
         update_interval=timedelta(minutes=15),
     )
-    hass = SimpleNamespace(data={DOMAIN: {entry.entry_id: coordinator}})
+    entry.runtime_data = coordinator
+    hass = SimpleNamespace(data={})
 
     result = await async_get_config_entry_diagnostics(hass, entry)
 
@@ -58,8 +58,13 @@ async def test_diagnostics_include_the_entry_and_the_coordinator_data() -> None:
 
 
 async def test_diagnostics_without_a_loaded_coordinator() -> None:
-    """Downloading diagnostics for an entry that failed to set up must not raise."""
+    """Downloading diagnostics for an entry that failed to set up must not raise.
+
+    Such an entry never had runtime_data assigned, and reading the attribute
+    anyway raises AttributeError rather than returning None.
+    """
     entry = _entry()
+    assert not hasattr(entry, "runtime_data")
     hass = SimpleNamespace(data={})
 
     result = await async_get_config_entry_diagnostics(hass, entry)

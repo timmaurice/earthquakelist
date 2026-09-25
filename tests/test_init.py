@@ -4,10 +4,12 @@ from __future__ import annotations
 
 from importlib import import_module
 from types import SimpleNamespace
-from unittest.mock import AsyncMock
+from unittest.mock import AsyncMock, patch
 
 import pytest
+from pytest_homeassistant_custom_component.common import MockConfigEntry
 
+from homeassistant.config_entries import ConfigEntryState
 from homeassistant.helpers.update_coordinator import UpdateFailed
 
 from custom_components.earthquakelist import (
@@ -16,6 +18,8 @@ from custom_components.earthquakelist import (
     coordinator_name,
 )
 from custom_components.earthquakelist.api import EarthquakeListApiError
+from custom_components.earthquakelist.const import DOMAIN
+from custom_components.earthquakelist.parser import EarthquakeData
 
 
 def _entry(**overrides) -> SimpleNamespace:
@@ -103,3 +107,48 @@ def test_every_platform_leaves_updates_unthrottled(platform) -> None:
     module = import_module(f"custom_components.earthquakelist.{platform}")
 
     assert module.PARALLEL_UPDATES == 0
+
+
+async def test_the_coordinator_lives_on_the_entry(
+    hass, enable_custom_integrations
+) -> None:
+    """Setup hands the coordinator to the platforms through runtime_data.
+
+    Nothing per entry goes into hass.data any more, so an unload has nothing to
+    pop there either - Home Assistant drops runtime_data itself.
+    """
+    entry = MockConfigEntry(
+        domain=DOMAIN,
+        title="Corfu Earthquakes",
+        unique_id="place_2042",
+        data=_entry().data,
+    )
+    entry.add_to_hass(hass)
+    quake = EarthquakeData(id="42", magnitude=5.6, place_name="Corfu")
+
+    with (
+        # async_setup only registers the card; it and the http dependency it
+        # pulls in are not what this test is about.
+        patch("custom_components.earthquakelist.async_setup", return_value=True),
+        patch("homeassistant.setup.async_process_deps_reqs"),
+        patch(
+            "custom_components.earthquakelist.EarthquakeListAPI.get_earthquakes",
+            AsyncMock(return_value=[quake]),
+        ),
+    ):
+        assert await hass.config_entries.async_setup(entry.entry_id)
+        await hass.async_block_till_done()
+
+    assert entry.state is ConfigEntryState.LOADED
+    assert entry.runtime_data.data == [quake]
+    assert DOMAIN not in hass.data
+    assert (
+        hass.states.get("sensor.earthquakelist_corfu_latest_earthquake").state == "5.6"
+    )
+
+    assert await hass.config_entries.async_unload(entry.entry_id)
+    await hass.async_block_till_done()
+
+    assert entry.state is ConfigEntryState.NOT_LOADED
+    assert not hasattr(entry, "runtime_data")
+    assert DOMAIN not in hass.data
