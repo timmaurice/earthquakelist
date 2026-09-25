@@ -7,9 +7,10 @@ on:
     branches: ['main']
 
 env:
-  # The oldest core this job is willing to call a valid run. hacs.json declares
-  # no minimum, so this tracks the current core rather than a support floor - it
-  # is a tripwire. See the "Report and check the resolved core" step.
+  # The oldest core this job is willing to call a valid run, and the minimum
+  # hacs.json declares - HACS must not offer the integration to a core CI never
+  # tested. Raise both together (tests/test_packaging.py checks they match).
+  # See the "Report and check the resolved core" step.
   MINIMUM_CORE: '2026.9.3'
 
 jobs:
