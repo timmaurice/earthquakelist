@@ -12,6 +12,9 @@ bun.lock
 custom_components
 config
 
+# Python test suite, including the raw API response fixtures
+tests/
+
 # Virtual Environments
 .venv
 venv

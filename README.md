@@ -175,7 +175,7 @@ All data is provided by the public API behind [earthquakelist.org](https://earth
 3.  **Run the backend tests:**
 
     ```bash
-    PYTHONPATH=. pytest custom_components/earthquakelist/tests
+    PYTHONPATH=. pytest tests
     ```
 
 4.  **Build the frontend card:**
