@@ -3,35 +3,16 @@
 from __future__ import annotations
 
 import logging
-from datetime import timedelta
 
-from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import Platform
 from homeassistant.core import HomeAssistant
 import homeassistant.helpers.config_validation as cv
-from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 
-from .api import EarthquakeListAPI, EarthquakeListApiError
-from .const import (
-    CONF_GEO_ID,
-    CONF_GEO_TYPE,
-    CONF_MAX_DISTANCE,
-    CONF_MIN_MAGNITUDE,
-    CONF_PLACE,
-    DEFAULT_MAX_DISTANCE,
-    DEFAULT_MIN_MAGNITUDE,
-    DOMAIN,
-)
-from .parser import EarthquakeData
-
-# Each entry keeps its own coordinator on the entry itself. Home Assistant drops
-# runtime_data when the entry unloads, so there is no per-entry bookkeeping left
-# in hass.data to clean up.
-type EarthquakeListCoordinator = DataUpdateCoordinator[list[EarthquakeData]]
-type EarthquakeConfigEntry = ConfigEntry[EarthquakeListCoordinator]
+from .api import EarthquakeListAPI
+from .const import DOMAIN
+from .coordinator import EarthquakeConfigEntry, EarthquakeListCoordinator
 
 PLATFORMS = [Platform.SENSOR]
-SCAN_INTERVAL = timedelta(minutes=15)
 _LOGGER = logging.getLogger(__name__)
 
 CONFIG_SCHEMA = cv.config_entry_only_config_schema(DOMAIN)
@@ -132,60 +113,9 @@ async def async_setup(hass: HomeAssistant, config: dict) -> bool:
     return True
 
 
-def coordinator_name(entry: ConfigEntry) -> str:
-    """Name the coordinator after the monitored place.
-
-    The name is what Home Assistant prints in "Error fetching <name> data", so
-    an opaque entry id there tells the user nothing about which of their
-    locations stopped updating.
-    """
-    place = entry.data.get(CONF_PLACE) or entry.title or entry.entry_id
-    return f"{DOMAIN} {place}"
-
-
-def build_update_method(api: EarthquakeListAPI, entry: ConfigEntry):
-    """Build the coordinator's fetch callback.
-
-    A module-level factory rather than a closure inside async_setup_entry so the
-    failure path stays directly testable: api.py deliberately stays quiet about
-    communication failures, so translating EarthquakeListApiError into
-    UpdateFailed here is the only thing that surfaces an outage at all.
-    """
-    geo_type = entry.data[CONF_GEO_TYPE]
-    geo_id = entry.data[CONF_GEO_ID]
-
-    async def async_update_data():
-        """Fetch the latest earthquake for the configured location."""
-        min_magnitude = entry.options.get(
-            CONF_MIN_MAGNITUDE,
-            entry.data.get(CONF_MIN_MAGNITUDE, DEFAULT_MIN_MAGNITUDE),
-        )
-        max_distance = entry.options.get(
-            CONF_MAX_DISTANCE,
-            entry.data.get(CONF_MAX_DISTANCE, DEFAULT_MAX_DISTANCE),
-        )
-
-        try:
-            return await api.get_earthquakes(
-                geo_type, geo_id, min_magnitude, max_distance
-            )
-        except EarthquakeListApiError as err:
-            raise UpdateFailed(str(err)) from err
-
-    return async_update_data
-
-
 async def async_setup_entry(hass: HomeAssistant, entry: EarthquakeConfigEntry) -> bool:
     """Set up Earthquake List from a config entry."""
-    api = EarthquakeListAPI(hass)
-
-    coordinator = DataUpdateCoordinator(
-        hass,
-        _LOGGER,
-        name=coordinator_name(entry),
-        update_method=build_update_method(api, entry),
-        update_interval=SCAN_INTERVAL,
-    )
+    coordinator = EarthquakeListCoordinator(hass, entry, EarthquakeListAPI(hass))
 
     await coordinator.async_config_entry_first_refresh()
 

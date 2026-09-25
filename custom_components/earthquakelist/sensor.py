@@ -15,7 +15,6 @@ from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 from homeassistant.util import slugify
 
-from . import EarthquakeConfigEntry, EarthquakeListCoordinator
 from .const import (
     BASE_URL,
     CONF_MAX_DISTANCE,
@@ -23,6 +22,7 @@ from .const import (
     CONF_PLACE,
     DOMAIN,
 )
+from .coordinator import EarthquakeConfigEntry, EarthquakeListCoordinator
 from .parser import EarthquakeData
 
 _LOGGER = logging.getLogger(__name__)
