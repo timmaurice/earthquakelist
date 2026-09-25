@@ -6,7 +6,7 @@ from typing import Any
 
 from homeassistant.core import HomeAssistant
 
-from . import EarthquakeConfigEntry
+from .coordinator import EarthquakeConfigEntry
 from .sensor import _earthquake_to_dict
 
 

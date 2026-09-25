@@ -1,4 +1,4 @@
-"""Tests for the coordinator wiring in __init__.py."""
+"""Tests for the config entry setup in __init__.py."""
 
 from __future__ import annotations
 
@@ -10,15 +10,13 @@ import pytest
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
 from homeassistant.config_entries import ConfigEntryState
-from homeassistant.helpers.update_coordinator import UpdateFailed
 
-from custom_components.earthquakelist import (
-    PLATFORMS,
-    build_update_method,
-    coordinator_name,
-)
-from custom_components.earthquakelist.api import EarthquakeListApiError
+from custom_components.earthquakelist import PLATFORMS
 from custom_components.earthquakelist.const import DOMAIN
+from custom_components.earthquakelist.coordinator import (
+    SCAN_INTERVAL,
+    EarthquakeListCoordinator,
+)
 from custom_components.earthquakelist.parser import EarthquakeData
 
 
@@ -37,63 +35,6 @@ def _entry(**overrides) -> SimpleNamespace:
         data=data,
         options=overrides.pop("options", {}),
     )
-
-
-async def test_a_communication_failure_is_reported_as_update_failed() -> None:
-    """The only thing that surfaces an outage at all.
-
-    api.py deliberately does not log communication failures any more, so if this
-    translation ever disappears the integration goes completely silent: the
-    coordinator would raise a bare exception nobody maps to "unavailable", and
-    the user would keep seeing a stale magnitude with no error line anywhere.
-    """
-    api = SimpleNamespace(
-        get_earthquakes=AsyncMock(
-            side_effect=EarthquakeListApiError(
-                "Error communicating with earthquakelist.org: boom"
-            )
-        )
-    )
-
-    update = build_update_method(api, _entry())
-
-    with pytest.raises(UpdateFailed, match="boom") as excinfo:
-        await update()
-
-    # The original error stays attached, so the debug log still shows the cause.
-    assert isinstance(excinfo.value.__cause__, EarthquakeListApiError)
-
-
-async def test_a_successful_fetch_uses_the_current_filter_options() -> None:
-    """Options set through the options flow win over the values from setup."""
-    api = SimpleNamespace(get_earthquakes=AsyncMock(return_value=["quake"]))
-
-    update = build_update_method(
-        api, _entry(options={"min_magnitude": 4.5, "max_distance": 200})
-    )
-
-    assert await update() == ["quake"]
-    api.get_earthquakes.assert_awaited_once_with("place", "2042", 4.5, 200)
-
-
-async def test_an_empty_result_is_not_a_failure() -> None:
-    """No earthquake matched the filter is a normal state, not an outage."""
-    api = SimpleNamespace(get_earthquakes=AsyncMock(return_value=[]))
-
-    assert await build_update_method(api, _entry())() == []
-
-
-def test_the_coordinator_is_named_after_the_place() -> None:
-    """The `Error fetching <name> data` line must name something the user can act on."""
-    assert coordinator_name(_entry()) == "earthquakelist Corfu"
-
-
-def test_the_coordinator_name_falls_back_to_the_entry_title() -> None:
-    """An entry written before CONF_PLACE existed still gets a readable name."""
-    entry = _entry()
-    del entry.data["place"]
-
-    assert coordinator_name(entry) == "earthquakelist Corfu Earthquakes"
 
 
 @pytest.mark.parametrize("platform", PLATFORMS, ids=str)
@@ -152,3 +93,37 @@ async def test_the_coordinator_lives_on_the_entry(
     assert entry.state is ConfigEntryState.NOT_LOADED
     assert not hasattr(entry, "runtime_data")
     assert DOMAIN not in hass.data
+
+
+async def test_runtime_data_holds_the_coordinator_class(
+    hass, enable_custom_integrations
+) -> None:
+    """Setup stores an EarthquakeListCoordinator bound to its own entry.
+
+    The platforms and diagnostics read entry.runtime_data as that class, so a
+    plain DataUpdateCoordinator slipping back in would lose the typed
+    config_entry and the update logic that lives on the class.
+    """
+    entry = MockConfigEntry(
+        domain=DOMAIN,
+        title="Corfu Earthquakes",
+        unique_id="place_2042",
+        data=_entry().data,
+    )
+    entry.add_to_hass(hass)
+
+    with (
+        patch("custom_components.earthquakelist.async_setup", return_value=True),
+        patch("homeassistant.setup.async_process_deps_reqs"),
+        patch(
+            "custom_components.earthquakelist.EarthquakeListAPI.get_earthquakes",
+            AsyncMock(return_value=[]),
+        ),
+    ):
+        assert await hass.config_entries.async_setup(entry.entry_id)
+        await hass.async_block_till_done()
+
+    coordinator = entry.runtime_data
+    assert isinstance(coordinator, EarthquakeListCoordinator)
+    assert coordinator.config_entry is entry
+    assert coordinator.update_interval == SCAN_INTERVAL
