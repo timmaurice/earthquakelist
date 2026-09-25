@@ -22,6 +22,13 @@ from .const import (
     DEFAULT_MIN_MAGNITUDE,
     DOMAIN,
 )
+from .parser import EarthquakeData
+
+# Each entry keeps its own coordinator on the entry itself. Home Assistant drops
+# runtime_data when the entry unloads, so there is no per-entry bookkeeping left
+# in hass.data to clean up.
+type EarthquakeListCoordinator = DataUpdateCoordinator[list[EarthquakeData]]
+type EarthquakeConfigEntry = ConfigEntry[EarthquakeListCoordinator]
 
 PLATFORMS = [Platform.SENSOR]
 SCAN_INTERVAL = timedelta(minutes=15)
@@ -168,10 +175,8 @@ def build_update_method(api: EarthquakeListAPI, entry: ConfigEntry):
     return async_update_data
 
 
-async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
+async def async_setup_entry(hass: HomeAssistant, entry: EarthquakeConfigEntry) -> bool:
     """Set up Earthquake List from a config entry."""
-    hass.data.setdefault(DOMAIN, {})
-
     api = EarthquakeListAPI(hass)
 
     coordinator = DataUpdateCoordinator(
@@ -184,7 +189,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
     await coordinator.async_config_entry_first_refresh()
 
-    hass.data[DOMAIN][entry.entry_id] = coordinator
+    entry.runtime_data = coordinator
 
     entry.async_on_unload(entry.add_update_listener(_async_update_listener))
 
@@ -193,14 +198,13 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     return True
 
 
-async def _async_update_listener(hass: HomeAssistant, entry: ConfigEntry) -> None:
+async def _async_update_listener(
+    hass: HomeAssistant, entry: EarthquakeConfigEntry
+) -> None:
     """Reload the entry when options are updated."""
     await hass.config_entries.async_reload(entry.entry_id)
 
 
-async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
+async def async_unload_entry(hass: HomeAssistant, entry: EarthquakeConfigEntry) -> bool:
     """Unload a config entry."""
-    if unload_ok := await hass.config_entries.async_unload_platforms(entry, PLATFORMS):
-        hass.data[DOMAIN].pop(entry.entry_id)
-
-    return unload_ok
+    return await hass.config_entries.async_unload_platforms(entry, PLATFORMS)

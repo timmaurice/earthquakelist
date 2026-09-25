@@ -10,15 +10,12 @@ from homeassistant.components.sensor import (
     SensorEntityDescription,
     SensorStateClass,
 )
-from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
-from homeassistant.helpers.update_coordinator import (
-    CoordinatorEntity,
-    DataUpdateCoordinator,
-)
+from homeassistant.helpers.update_coordinator import CoordinatorEntity
 from homeassistant.util import slugify
 
+from . import EarthquakeConfigEntry, EarthquakeListCoordinator
 from .const import (
     BASE_URL,
     CONF_MAX_DISTANCE,
@@ -80,24 +77,24 @@ SENSOR_DESCRIPTION = EarthquakeListSensorEntityDescription(
 
 async def async_setup_entry(
     hass: HomeAssistant,
-    entry: ConfigEntry,
+    entry: EarthquakeConfigEntry,
     async_add_entities: AddEntitiesCallback,
 ) -> None:
     """Set up the Earthquake List sensor entry."""
-    coordinator = hass.data[DOMAIN][entry.entry_id]
+    coordinator = entry.runtime_data
 
     async_add_entities([EarthquakeListSensor(coordinator, entry, SENSOR_DESCRIPTION)])
 
 
-class EarthquakeListSensor(CoordinatorEntity, SensorEntity):
+class EarthquakeListSensor(CoordinatorEntity[EarthquakeListCoordinator], SensorEntity):
     """Representation of the latest matching earthquake for a monitored location."""
 
     _attr_has_entity_name = True
 
     def __init__(
         self,
-        coordinator: DataUpdateCoordinator,
-        entry: ConfigEntry,
+        coordinator: EarthquakeListCoordinator,
+        entry: EarthquakeConfigEntry,
         description: EarthquakeListSensorEntityDescription,
     ) -> None:
         """Initialize the sensor."""
