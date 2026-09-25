@@ -112,23 +112,28 @@ test.describe('The card on a real dashboard', () => {
 
   test('is sized on a sections dashboard by the grid options it reports', async ({ page }) => {
     // The unit test can only hand getGridOptions()'s literal back to itself. This is
-    // the only place that shows Home Assistant actually reads it: it puts the width
-    // the card asks for on the wrapper as --column-size, and refuses to go below the
-    // min_columns the card reports.
+    // the only place that shows Home Assistant actually reads it. hui-grid-section
+    // puts a numeric width on the wrapper as --column-size and refuses to go below
+    // the min_columns the card reports; for columns: 'full' it sets no --column-size
+    // at all and marks the wrapper with a full-width class instead.
     await page.goto(`/${urlPath}/3`);
 
     const cards = page.locator('earthquakelist-card');
     await expect(cards.first().locator('ha-card')).toBeVisible({ timeout: 60_000 });
 
-    const columnSize = (index: number) =>
-      cards
-        .nth(index)
-        .evaluate((el) => (el.closest('.card') as HTMLElement | null)?.style.getPropertyValue('--column-size').trim());
+    const wrapper = (index: number) =>
+      cards.nth(index).evaluate((el) => {
+        const card = el.closest('.card') as HTMLElement | null;
+        return {
+          columnSize: card?.style.getPropertyValue('--column-size').trim(),
+          fullWidth: card?.classList.contains('full-width'),
+        };
+      });
 
-    // Unconstrained: the 12 columns getGridOptions() asks for.
-    expect(await columnSize(0)).toBe('12');
+    // Unconstrained: the full width getGridOptions() asks for by name.
+    expect(await wrapper(0)).toEqual({ columnSize: '', fullWidth: true });
     // Asked for 3, clamped up to the min_columns of 6 the card reports ...
-    expect(await columnSize(1)).toBe('6');
+    expect(await wrapper(1)).toEqual({ columnSize: '6', fullWidth: false });
     // ... while a card that reports no minimum is left at the 3 it was given.
     const markdownColumnSize = await page
       .locator('hui-markdown-card')
