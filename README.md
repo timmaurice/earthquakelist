@@ -1,6 +1,6 @@
 # Earthquake List Integration for Home Assistant
 
-[![hacs_badge](https://img.shields.io/badge/HACS-Custom-41BDF5.svg?style=flat-square)](https://github.com/hacs/integration)
+[![Marketplace / HACS](https://img.shields.io/badge/Marketplace%20%2F%20HACS-Default-41BDF5.svg?style=flat-square)](https://hacs.xyz/docs/marketplace/)
 ![GitHub release (latest by date)](https://img.shields.io/github/v/release/timmaurice/earthquakelist?style=flat-square)
 [![GH-downloads](https://img.shields.io/github/downloads/timmaurice/earthquakelist/total?style=flat-square)](https://github.com/timmaurice/earthquakelist/releases)
 [![GH-last-commit](https://img.shields.io/github/last-commit/timmaurice/earthquakelist.svg?style=flat-square)](https://github.com/timmaurice/earthquakelist/commits/main)
@@ -48,11 +48,13 @@ Translate all the values in both new files and submit a pull request with your c
 
 ## Installation
 
-### HACS (Recommended)
+### Marketplace or HACS (Recommended)
 
-This integration is available in the [Home Assistant Community Store (HACS)](https://hacs.xyz/).
+This integration is in the default catalog. From Home Assistant 2026.11, find it under **Settings** → **Marketplace**; on earlier versions, in the [Home Assistant Community Store (HACS)](https://hacs.xyz/). The button opens it in whichever of the two your Home Assistant has:
 
-<a href="https://my.home-assistant.io/redirect/hacs_repository/?owner=timmaurice&repository=earthquakelist&category=integration" target="_blank" rel="noreferrer noopener"><img src="https://my.home-assistant.io/badges/hacs_repository.svg" alt="Open your Home Assistant instance and open a repository inside the Home Assistant Community Store." /></a>
+<a href="https://my.home-assistant.io/redirect/hacs_repository/?owner=timmaurice&repository=earthquakelist&category=integration" target="_blank" rel="noreferrer noopener"><img src="https://my.home-assistant.io/badges/hacs_repository.svg" alt="Open this repository in the Marketplace or HACS of your Home Assistant instance." /></a>
+
+After installing from HACS, restart Home Assistant. The Marketplace sets up a new integration without a restart.
 
 <details>
 <summary>Manual Installation</summary>
