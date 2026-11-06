@@ -1,6 +1,9 @@
 {
   "domain": "earthquakelist",
   "name": "Earthquake List",
+  "categories": [
+    "weather_alerts.public_warnings"
+  ],
   "codeowners": [
     "@timmaurice"
   ],
