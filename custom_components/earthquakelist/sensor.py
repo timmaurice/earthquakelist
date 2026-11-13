@@ -33,8 +33,12 @@ PARALLEL_UPDATES = 0
 
 
 def _earthquake_to_dict(earthquake: EarthquakeData) -> dict[str, object]:
-    """Convert an EarthquakeData record into a JSON-friendly dict for the card."""
-    return {
+    """Convert an EarthquakeData record into a JSON-friendly dict for the card.
+
+    Unset fields are omitted rather than sent as null: the card only guards against
+    `undefined`, so a null magnitude or latitude broke its rendering.
+    """
+    data = {
         "id": earthquake.id,
         "magnitude": earthquake.magnitude,
         "time": earthquake.time.isoformat() if earthquake.time else None,
@@ -57,6 +61,7 @@ def _earthquake_to_dict(earthquake: EarthquakeData) -> dict[str, object]:
         "local_timezone": earthquake.local_timezone,
         "local_timezone_short": earthquake.local_timezone_short,
     }
+    return {key: value for key, value in data.items() if value is not None}
 
 
 @dataclass(frozen=True, kw_only=True)

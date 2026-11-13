@@ -81,15 +81,16 @@ def test_earthquake_to_dict_includes_all_parsed_fields() -> None:
 
 
 def test_earthquake_to_dict_handles_missing_optional_fields() -> None:
-    """Fields the API omits should come through as None, not crash."""
+    """Fields the API omits are left out, not sent as null."""
     earthquake = EarthquakeData(id="1")
 
     result = _earthquake_to_dict(earthquake)
 
-    assert result["time"] is None
+    assert None not in result.values()
+    assert result["id"] == "1"
     assert result["offshore"] is False
-    assert result["news_link"] is None
-    assert result["local_timezone"] is None
+    for key in ("magnitude", "time", "latitude", "news_link", "local_timezone"):
+        assert key not in result
 
 
 def _entity_descriptions(platform: str) -> list[EntityDescription]:
