@@ -135,4 +135,11 @@ jobs:
       - name: Build card
         run: npm run build
 
+      - name: Check the committed bundle matches the source
+        run: |
+          if ! git diff --exit-code -- custom_components/earthquakelist/earthquakelist-card.js; then
+            echo "::error::custom_components/earthquakelist/earthquakelist-card.js is stale. Run npm run build and commit the result."
+            exit 1
+          fi
+
   # The Playwright e2e suite runs in its own workflow, e2e.yml.
