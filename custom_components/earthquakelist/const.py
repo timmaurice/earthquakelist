@@ -6,6 +6,7 @@ CONF_GEO_TYPE = "geo_type"
 CONF_GEO_ID = "geo_id"
 CONF_PLACE = "place"
 CONF_COUNTRY_CODE = "country_code"
+CONF_DISPLAY_NAME = "display_name"
 CONF_MIN_MAGNITUDE = "min_magnitude"
 CONF_MAX_DISTANCE = "max_distance"
 
