@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
-import { fireEvent, formatRelativeTime, isSafeUrl, magnitudeSeverity } from '../src/utils';
+import { fireEvent, fitLongitudes, formatRelativeTime, isSafeUrl, magnitudeSeverity } from '../src/utils';
 import { HomeAssistant } from '../src/types';
 
 function makeHass(language: string): HomeAssistant {
@@ -122,5 +122,19 @@ describe('isSafeUrl', () => {
     expect(isSafeUrl('data:text/html,<script>alert(1)</script>')).toBe(false);
     expect(isSafeUrl('//example.com')).toBe(false);
     expect(isSafeUrl(undefined)).toBe(false);
+  });
+});
+
+describe('fitLongitudes', () => {
+  it('keeps longitudes that do not cross the date line', () => {
+    expect(fitLongitudes([6.5, 10, -3])).toEqual([6.5, 10, -3]);
+  });
+
+  it('shifts negative longitudes across the antimeridian (Fiji)', () => {
+    expect(fitLongitudes([178, -178, 179.5])).toEqual([178, 182, 179.5]);
+  });
+
+  it('handles an empty list', () => {
+    expect(fitLongitudes([])).toEqual([]);
   });
 });
