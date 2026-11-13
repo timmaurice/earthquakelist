@@ -170,3 +170,52 @@ async def test_the_sensor_leaves_its_icon_to_icons_json(
 
     icons = await async_get_icons(hass, "entity", integrations=[DOMAIN])
     assert icons[DOMAIN]["sensor"]["latest_earthquake"] == {"default": "mdi:pulse"}
+
+
+async def test_a_failed_poll_keeps_the_last_earthquakes_and_marks_them_stale(
+    hass, enable_custom_integrations
+) -> None:
+    """An outage must not blank the card: the sensor keeps its last data.
+
+    An unavailable state carries no attributes, so the sensor stays available
+    while the coordinator holds data and flags it with `stale`.
+    """
+    from custom_components.earthquakelist.api import EarthquakeListApiError
+
+    entry = MockConfigEntry(
+        domain=DOMAIN,
+        title="Corfu Earthquakes",
+        unique_id="place_2042",
+        data={
+            "geo_type": "place",
+            "geo_id": "2042",
+            "place": "Corfu",
+            "min_magnitude": 3.0,
+            "max_distance": 50,
+        },
+    )
+    entry.add_to_hass(hass)
+    quake = EarthquakeData(id="42", magnitude=5.6, place_name="Corfu")
+    get = AsyncMock(return_value=[quake])
+
+    with (
+        patch("custom_components.earthquakelist.async_setup", return_value=True),
+        patch("homeassistant.setup.async_process_deps_reqs"),
+        patch("custom_components.earthquakelist.EarthquakeListAPI.get_earthquakes", get),
+    ):
+        assert await hass.config_entries.async_setup(entry.entry_id)
+        await hass.async_block_till_done()
+
+        entity_id = "sensor.earthquakelist_corfu_latest_earthquake"
+        assert "stale" not in hass.states.get(entity_id).attributes
+
+        get.side_effect = EarthquakeListApiError("boom")
+        coordinator = entry.runtime_data
+        await coordinator.async_refresh()
+        await hass.async_block_till_done()
+
+    assert not coordinator.last_update_success
+    state = hass.states.get(entity_id)
+    assert state.state == "5.6"
+    assert state.attributes["stale"] is True
+    assert len(state.attributes["earthquakes"]) == 1
