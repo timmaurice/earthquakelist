@@ -65,6 +65,12 @@
   }
 }
 
+.stale-indicator {
+  flex: 0 0 auto;
+  --mdc-icon-size: 16px;
+  color: var(--warning-color, #ffa600);
+}
+
 .place-time {
   font-size: 0.85em;
   color: var(--secondary-text-color);

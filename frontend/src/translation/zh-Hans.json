@@ -30,6 +30,7 @@
     "no_data": "暂无地震数据",
     "entity_not_found": "未找到实体 {entity}",
     "entity_unavailable": "传感器不可用 — 无法从 earthquakelist.org 获取数据",
+    "stale_hint": "数据可能已过时 — 目前无法连接 earthquakelist.org",
     "no_places_configured": "请在卡片编辑器中至少选择一个地点。",
     "offshore": "海域",
     "felt_reports": "{count} 人有感",

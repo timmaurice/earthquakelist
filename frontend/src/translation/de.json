@@ -30,6 +30,7 @@
     "no_data": "Noch keine Erdbebendaten",
     "entity_not_found": "Entität {entity} nicht gefunden",
     "entity_unavailable": "Sensor nicht verfügbar — keine Daten von earthquakelist.org",
+    "stale_hint": "Daten könnten veraltet sein — earthquakelist.org ist derzeit nicht erreichbar",
     "no_places_configured": "Wähle im Karten-Editor mindestens einen Ort aus.",
     "offshore": "Offshore",
     "felt_reports": "Gespürt von {count}",

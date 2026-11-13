@@ -30,6 +30,7 @@
     "no_data": "Belum ada data gempa bumi",
     "entity_not_found": "Entitas {entity} tidak ditemukan",
     "entity_unavailable": "Sensor tidak tersedia — tidak ada data dari earthquakelist.org",
+    "stale_hint": "Data mungkin sudah usang — earthquakelist.org saat ini tidak dapat dijangkau",
     "no_places_configured": "Pilih setidaknya satu lokasi di editor kartu.",
     "offshore": "Lepas pantai",
     "felt_reports": "Dirasakan oleh {count}",
