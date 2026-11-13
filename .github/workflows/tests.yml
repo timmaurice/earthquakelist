@@ -135,6 +135,13 @@ jobs:
       - name: Build card
         run: npm run build
 
+      - name: Check the committed bundle matches the source
+        run: |
+          if ! git diff --exit-code -- custom_components/earthquakelist/earthquakelist-card.js; then
+            echo "::error::custom_components/earthquakelist/earthquakelist-card.js is stale. Run npm run build and commit the result."
+            exit 1
+          fi
+
   # No e2e job on purpose. The Playwright suite (npm run test:e2e) drives a real Home
   # Assistant in Docker and signs in as an existing admin, but `config/` is gitignored,
   # so a fresh checkout has no onboarded instance for it to sign in to. Wiring it up
