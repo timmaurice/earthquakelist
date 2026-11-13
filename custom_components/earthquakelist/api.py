@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import logging
+import math
 from typing import Any
 
 import aiohttp
@@ -23,6 +24,8 @@ _LOGGER = logging.getLogger(__name__)
 # The API is a small JSON endpoint; without an explicit timeout a hung connection
 # would stall a poll until whatever the shared session happens to default to.
 REQUEST_TIMEOUT = aiohttp.ClientTimeout(total=15)
+# The largest `limit` the API honours; anything above it falls back to 10.
+MAX_UPSTREAM_LIMIT = 50
 
 
 class EarthquakeListApiError(Exception):
@@ -70,20 +73,35 @@ class EarthquakeListAPI:
         Returns an empty list when the request succeeded but no earthquake
         matched the filter. Raises EarthquakeListApiError on a communication
         failure. Results are ordered latest first.
+
+        The API truncates `min_magnitude` to an integer (3.5 behaves like 3), so
+        a fractional filter is sent rounded down and applied here instead. The
+        request then asks for more results than needed, so the list is not left
+        short once the quakes below the filter are dropped.
         """
+        upstream_min_magnitude = math.floor(min_magnitude)
+        filter_locally = upstream_min_magnitude != min_magnitude
+
         payload = await self._request(
             {
                 "action": "earthquakes",
-                "limit": str(limit),
+                "limit": str(MAX_UPSTREAM_LIMIT if filter_locally else limit),
                 "geo": geo_type,
                 "id": geo_id,
                 "order": DEFAULT_ORDER,
                 "max_distance": max_distance,
-                "min_magnitude": min_magnitude,
+                "min_magnitude": upstream_min_magnitude,
             }
         )
 
-        return parse_earthquakes(payload.get("data"))
+        earthquakes = parse_earthquakes(payload.get("data"))
+        if filter_locally:
+            earthquakes = [
+                earthquake
+                for earthquake in earthquakes
+                if earthquake.magnitude is None or earthquake.magnitude >= min_magnitude
+            ]
+        return earthquakes[:limit]
 
     async def _request(self, params: dict[str, Any]) -> dict[str, Any]:
         """Perform a GET request against the earthquakelist.org API.
