@@ -539,6 +539,28 @@ describe('EarthquakeListCard', () => {
     expect(empty?.classList.contains('error')).toBe(false);
   });
 
+  it('names the filter when no earthquake matches it', async () => {
+    const entityId = 'sensor.earthquakelist_corfu_latest_earthquake';
+    const card = new EarthquakeListCard();
+    card.hass = makeHass({
+      states: {
+        [entityId]: {
+          entity_id: entityId,
+          state: 'unknown',
+          last_changed: '',
+          last_updated: '',
+          attributes: { monitored_place: 'Corfu', min_magnitude: 3, max_distance: 50 },
+        },
+      },
+    });
+    card.setConfig({ type: 'custom:earthquakelist-card', places: [entityId] });
+    document.body.appendChild(card);
+    await card.updateComplete;
+
+    const empty = card.shadowRoot?.querySelector('.empty-state');
+    expect(empty?.textContent).toContain('No earthquakes match the filter (M ≥ 3, ≤ 50 km)');
+  });
+
   it('shows offshore and felt-report info in the summary and list-item meta', async () => {
     const entityId = 'sensor.earthquakelist_japan_latest_earthquake';
     const earthquakes = [
