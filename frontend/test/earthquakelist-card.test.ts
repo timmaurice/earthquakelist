@@ -514,6 +514,39 @@ describe('EarthquakeListCard', () => {
     expect(empty?.textContent).not.toContain('No earthquake data yet');
   });
 
+  describe('stale hint', () => {
+    async function renderStale(attributes: Record<string, unknown>) {
+      const entityId = 'sensor.earthquakelist_corfu_latest_earthquake';
+      const card = new EarthquakeListCard();
+      card.hass = makeHass({
+        states: {
+          [entityId]: {
+            entity_id: entityId,
+            state: '4.5',
+            last_changed: '',
+            last_updated: '',
+            attributes: { monitored_place: 'Corfu', earthquakes: [{ magnitude: 4.5, place: 'Corfu' }], ...attributes },
+          },
+        },
+      });
+      card.setConfig({ type: 'custom:earthquakelist-card', places: [entityId], show_map: false });
+      document.body.appendChild(card);
+      await card.updateComplete;
+      return card.shadowRoot?.querySelector('.stale-indicator');
+    }
+
+    it('shows a localized hint when the entity has stale: true', async () => {
+      const el = await renderStale({ stale: true });
+      expect(el).not.toBeNull();
+      expect(el?.getAttribute('title')).toContain('outdated');
+    });
+
+    it('shows nothing when stale is false or absent', async () => {
+      expect(await renderStale({ stale: false })).toBeNull();
+      expect(await renderStale({})).toBeNull();
+    });
+  });
+
   // Regression guard, not fix-proving: the third empty state is the one that already
   // existed, and this pins that splitting out the other two did not swallow it.
   it('keeps the plain empty state for a sensor that simply matched nothing', async () => {

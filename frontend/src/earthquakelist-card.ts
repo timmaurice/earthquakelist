@@ -220,6 +220,17 @@ export class EarthquakeListCard extends LitElement implements LovelaceCard {
               @click=${() => this._showMoreInfo(place.entityId)}
               @keydown=${(e: KeyboardEvent) => this._handleEntityLinkKeydown(e, place.entityId)}
             ></ha-icon>
+            ${
+              stateObj.attributes.stale === true
+                ? html`<ha-icon
+                    class="stale-indicator"
+                    icon="mdi:clock-alert-outline"
+                    role="img"
+                    aria-label=${localize(this.hass, 'card.stale_hint')}
+                    title=${localize(this.hass, 'card.stale_hint')}
+                  ></ha-icon>`
+                : nothing
+            }
           </span>
           <span class="place-time">${timeAgo}</span>
         </div>

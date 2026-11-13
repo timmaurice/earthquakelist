@@ -31,6 +31,7 @@
     "no_data_filtered": "フィルター({filter})に一致する地震はありません",
     "entity_not_found": "エンティティ {entity} が見つかりません",
     "entity_unavailable": "センサーが利用できません — earthquakelist.org からデータを取得できませんでした",
+    "stale_hint": "データが古い可能性があります — earthquakelist.org に現在接続できません",
     "no_places_configured": "カードエディターで地域を1つ以上選択してください。",
     "offshore": "海域",
     "felt_reports": "{count} 人が体感",
