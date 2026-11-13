@@ -76,7 +76,13 @@ trigger:
 
 condition:
   - condition: template
-    value_template: '{{ trigger.to_state.attributes.time != trigger.from_state.attributes.time }}'
+    # Both states must carry a time: while the sensor is unavailable the
+    # attribute is gone, so the same quake would look new on recovery.
+    value_template: >-
+      {{ trigger.from_state is not none and trigger.to_state is not none
+      and trigger.from_state.attributes.get('time') is not none
+      and trigger.to_state.attributes.get('time') is not none
+      and trigger.to_state.attributes.time != trigger.from_state.attributes.time }}
   - condition: template
     value_template: '{{ trigger.to_state.state | float(0) >= min_magnitude }}'
   - condition: template
