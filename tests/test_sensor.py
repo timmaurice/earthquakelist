@@ -192,3 +192,10 @@ def test_device_name_uses_display_name_only_when_stored(extra, expected) -> None
     )
     sensor = EarthquakeListSensor(MagicMock(), entry, SENSOR_DESCRIPTION)
     assert sensor.device_info["name"] == expected
+
+
+def test_earthquake_list_is_not_recorded() -> None:
+    """The bulky `earthquakes` list is excluded from the recorder."""
+    from custom_components.earthquakelist.sensor import EarthquakeListSensor
+
+    assert "earthquakes" in EarthquakeListSensor._unrecorded_attributes
