@@ -170,3 +170,40 @@ async def test_the_sensor_leaves_its_icon_to_icons_json(
 
     icons = await async_get_icons(hass, "entity", integrations=[DOMAIN])
     assert icons[DOMAIN]["sensor"]["latest_earthquake"] == {"default": "mdi:pulse"}
+
+
+async def test_empty_result_still_reports_the_filter(
+    hass, enable_custom_integrations
+) -> None:
+    """Without a match the sensor keeps min_magnitude/max_distance for the card."""
+    entry = MockConfigEntry(
+        domain=DOMAIN,
+        title="Corfu Earthquakes",
+        unique_id="place_2042",
+        data={
+            "geo_type": "place",
+            "geo_id": "2042",
+            "place": "Corfu",
+            "min_magnitude": 3.0,
+            "max_distance": 50,
+        },
+    )
+    entry.add_to_hass(hass)
+
+    with (
+        patch("custom_components.earthquakelist.async_setup", return_value=True),
+        patch("homeassistant.setup.async_process_deps_reqs"),
+        patch(
+            "custom_components.earthquakelist.EarthquakeListAPI.get_earthquakes",
+            AsyncMock(return_value=[]),
+        ),
+    ):
+        assert await hass.config_entries.async_setup(entry.entry_id)
+        await hass.async_block_till_done()
+
+    state = hass.states.get("sensor.earthquakelist_corfu_latest_earthquake")
+    assert state is not None
+    assert state.attributes["min_magnitude"] == 3.0
+    assert state.attributes["max_distance"] == 50
+    assert state.attributes["monitored_place"] == "Corfu"
+    assert "earthquakes" not in state.attributes

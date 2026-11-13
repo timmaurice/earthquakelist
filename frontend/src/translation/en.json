@@ -28,6 +28,7 @@
     "distance": "Distance",
     "depth": "Depth",
     "no_data": "No earthquake data yet",
+    "no_data_filtered": "No earthquakes match the filter ({filter})",
     "entity_not_found": "Entity {entity} not found",
     "entity_unavailable": "Sensor unavailable — no data from earthquakelist.org",
     "no_places_configured": "Pick at least one place in the card editor.",
