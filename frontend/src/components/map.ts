@@ -11,7 +11,7 @@ import type {
 import maplibreCss from 'maplibre-gl/dist/maplibre-gl.css';
 import mapStyles from '../styles/map-styles.scss';
 import { EarthquakeListItem, HomeAssistant, MapThemeMode, MapTileSource } from '../types';
-import { isSafeUrl, magnitudeSeverity } from '../utils';
+import { fitLongitudes, isSafeUrl, magnitudeSeverity } from '../utils';
 import { localize } from '../localize';
 import { installMapLibreWorker } from '../maplibre-worker';
 
@@ -631,11 +631,16 @@ export class EarthquakeListMap extends LitElement {
     const bounds = new maplibregl.LngLatBounds();
     const seenKeys = new Set<string>();
 
+    // Quakes on both sides of the date line must not make the fit span the whole world.
+    const located = this.earthquakes.filter((eq) => eq.latitude !== undefined && eq.longitude !== undefined);
+    const adjusted = fitLongitudes(located.map((eq) => eq.longitude as number));
+    const fitLngs = new Map(located.map((eq, i) => [eq, adjusted[i]] as const));
+
     this.earthquakes.forEach((eq, index) => {
       if (eq.latitude === undefined || eq.longitude === undefined) return;
       const key = this._markerKey(eq);
       seenKeys.add(key);
-      bounds.extend([eq.longitude, eq.latitude]);
+      bounds.extend([fitLngs.get(eq) ?? eq.longitude, eq.latitude]);
 
       const severity = magnitudeSeverity(eq.magnitude);
       const size = 18 + Math.round((eq.magnitude ?? 3) * 2);
