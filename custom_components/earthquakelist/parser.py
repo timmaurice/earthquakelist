@@ -64,6 +64,18 @@ class SearchResult:
     population: int | None = None
     link_url: str | None = None
 
+    @property
+    def display_name(self) -> str:
+        """Name qualified with region/country, e.g. "Athens (Attica, Greece)".
+
+        The API's `desc` reads like "Place in Ionian Islands, Greece"; the part after
+        " in " names the region/country. Entries without one (e.g. a country) keep the
+        plain name.
+        """
+        _, sep, qualifier = (self.description or "").partition(" in ")
+        qualifier = qualifier.strip()
+        return f"{self.name} ({qualifier})" if sep and qualifier else self.name
+
 
 @dataclass(slots=True)
 class EarthquakeData:

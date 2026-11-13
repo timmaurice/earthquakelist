@@ -13,6 +13,7 @@ from homeassistant.helpers import selector
 from .api import EarthquakeListAPI
 from .const import (
     CONF_COUNTRY_CODE,
+    CONF_DISPLAY_NAME,
     CONF_GEO_ID,
     CONF_GEO_TYPE,
     CONF_MAX_DISTANCE,
@@ -109,11 +110,12 @@ class EarthquakeListConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 self._abort_if_unique_id_configured()
 
                 return self.async_create_entry(
-                    title=f"{result.name} Earthquakes",
+                    title=f"{result.display_name} Earthquakes",
                     data={
                         CONF_GEO_TYPE: result.geo_type,
                         CONF_GEO_ID: result.geo_id,
                         CONF_PLACE: result.name,
+                        CONF_DISPLAY_NAME: result.display_name,
                         CONF_COUNTRY_CODE: result.country_code or "",
                         CONF_MIN_MAGNITUDE: user_input[CONF_MIN_MAGNITUDE],
                         CONF_MAX_DISTANCE: round(user_input[CONF_MAX_DISTANCE]),

@@ -4,7 +4,7 @@ from datetime import UTC, datetime
 from importlib import import_module
 import json
 from pathlib import Path
-from unittest.mock import AsyncMock, patch
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 from pytest_homeassistant_custom_component.common import MockConfigEntry
@@ -170,3 +170,25 @@ async def test_the_sensor_leaves_its_icon_to_icons_json(
 
     icons = await async_get_icons(hass, "entity", integrations=[DOMAIN])
     assert icons[DOMAIN]["sensor"]["latest_earthquake"] == {"default": "mdi:pulse"}
+
+
+@pytest.mark.parametrize(
+    ("extra", "expected"),
+    [
+        ({"display_name": "Corfu (Ionian Islands, Greece)"}, "Corfu (Ionian Islands, Greece)"),
+        ({}, "Corfu"),  # entries created before display_name existed stay unchanged
+    ],
+)
+def test_device_name_uses_display_name_only_when_stored(extra, expected) -> None:
+    from custom_components.earthquakelist.sensor import (
+        SENSOR_DESCRIPTION,
+        EarthquakeListSensor,
+    )
+
+    entry = MockConfigEntry(
+        domain=DOMAIN,
+        title="x",
+        data={"geo_type": "place", "geo_id": "2042", "place": "Corfu", **extra},
+    )
+    sensor = EarthquakeListSensor(MagicMock(), entry, SENSOR_DESCRIPTION)
+    assert sensor.device_info["name"] == expected
