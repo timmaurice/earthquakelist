@@ -127,6 +127,18 @@ class EarthquakeListSensor(CoordinatorEntity[EarthquakeListCoordinator], SensorE
         return earthquakes[0].magnitude
 
     @property
+    def available(self) -> bool:
+        """Stay available while a failed poll still has earlier data to show.
+
+        CoordinatorEntity goes unavailable on any failed update, and an
+        unavailable state carries no attributes, so the card lost the whole
+        earthquake list during an outage. The last good data is kept instead and
+        flagged with the `stale` attribute until a poll succeeds again. Only an
+        entity that has never had data is unavailable.
+        """
+        return self.coordinator.data is not None
+
+    @property
     def extra_state_attributes(self) -> dict[str, object] | None:
         """Return the state attributes."""
         earthquakes = self.coordinator.data
@@ -167,6 +179,8 @@ class EarthquakeListSensor(CoordinatorEntity[EarthquakeListCoordinator], SensorE
             **filter_attrs,
             "earthquakes": [_earthquake_to_dict(eq) for eq in earthquakes],
         }
+        if not self.coordinator.last_update_success:
+            attrs["stale"] = True
         return {key: value for key, value in attrs.items() if value is not None}
 
     @property
