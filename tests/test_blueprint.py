@@ -102,3 +102,29 @@ async def test_tsunami_only_condition_uses_the_same_check(
         )
         is expected
     )
+
+
+@pytest.mark.parametrize(
+    ("from_attrs", "to_attrs", "expected"),
+    [
+        # A genuinely new quake.
+        ({"time": "T1"}, {"time": "T2"}, True),
+        # Same quake again.
+        ({"time": "T1"}, {"time": "T1"}, False),
+        # Recovery from unavailable: the attribute was missing before.
+        (None, {"time": "T1"}, False),
+        # Attribute vanishing (sensor unavailable).
+        ({"time": "T1"}, None, False),
+    ],
+)
+async def test_time_condition_ignores_unavailable_phases(
+    hass: HomeAssistant, from_attrs, to_attrs, expected: bool
+) -> None:
+    """The same quake after an unavailable phase must not notify again."""
+    condition = _blueprint()["condition"][0]["value_template"]
+
+    def state(attrs):
+        return State("sensor.x", "3.6", attrs or {})
+
+    trigger = {"from_state": state(from_attrs), "to_state": state(to_attrs)}
+    assert _render(hass, condition, {"trigger": trigger}) is expected
