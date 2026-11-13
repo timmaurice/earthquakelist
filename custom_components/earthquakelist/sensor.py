@@ -96,6 +96,8 @@ class EarthquakeListSensor(CoordinatorEntity[EarthquakeListCoordinator], SensorE
     """Representation of the latest matching earthquake for a monitored location."""
 
     _attr_has_entity_name = True
+    # The match list repeats on every poll; keep it out of the recorder database.
+    _unrecorded_attributes = frozenset({"earthquakes"})
 
     def __init__(
         self,

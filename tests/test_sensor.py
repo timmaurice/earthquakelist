@@ -170,3 +170,10 @@ async def test_the_sensor_leaves_its_icon_to_icons_json(
 
     icons = await async_get_icons(hass, "entity", integrations=[DOMAIN])
     assert icons[DOMAIN]["sensor"]["latest_earthquake"] == {"default": "mdi:pulse"}
+
+
+def test_earthquake_list_is_not_recorded() -> None:
+    """The bulky `earthquakes` list is excluded from the recorder."""
+    from custom_components.earthquakelist.sensor import EarthquakeListSensor
+
+    assert "earthquakes" in EarthquakeListSensor._unrecorded_attributes
