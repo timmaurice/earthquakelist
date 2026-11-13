@@ -128,3 +128,54 @@ async def test_time_condition_ignores_unavailable_phases(
 
     trigger = {"from_state": state(from_attrs), "to_state": state(to_attrs)}
     assert _render(hass, condition, {"trigger": trigger}) is expected
+
+
+@pytest.mark.parametrize(
+    "to_state",
+    [
+        # Sensor went unavailable: state is a string, every attribute is gone.
+        State("sensor.x", "unavailable", {}),
+        State("sensor.x", "unknown", {}),
+        # Entity removed while the trigger was pending.
+        None,
+        # Normal quake without distance/direction (no home location configured).
+        State("sensor.x", "3.6", {"time": "T1", "place": "Corfu"}),
+        State("sensor.x", "3.6", {"time": "T1", "distance_km": ""}),
+    ],
+)
+async def test_variables_render_without_attributes(
+    hass: HomeAssistant, to_state
+) -> None:
+    """The trigger also fires on unavailable, before the conditions run.
+
+    The variables block used to raise "Error rendering variables: round got
+    invalid input ''" because distance was rendered when distance_km was absent.
+    """
+    variables = _blueprint()["variables"]
+    scope = {
+        "trigger": {"to_state": to_state, "from_state": None},
+        "min_magnitude": 0,
+        "tsunami_only": False,
+    }
+    for name, template in variables.items():
+        if isinstance(template, str) and "{{" in template:
+            scope[name] = _render(hass, template, dict(scope))
+
+    assert scope["is_tsunami"] is False
+    assert "round got invalid input" not in str(scope["message"])
+    assert "km" not in str(scope["message"])
+
+
+async def test_message_includes_distance_when_known(hass: HomeAssistant) -> None:
+    """The distance suffix is still produced when the sensor carries it."""
+    variables = _blueprint()["variables"]
+    scope = {
+        "trigger": _trigger({"distance_km": 12.4, "direction": "NW"}),
+        "min_magnitude": 0,
+        "tsunami_only": False,
+    }
+    for name, template in variables.items():
+        if isinstance(template, str) and "{{" in template:
+            scope[name] = _render(hass, template, dict(scope))
+
+    assert scope["message"] == "Magnitude 3.6 earthquake near Corfu (12 km NW)."
