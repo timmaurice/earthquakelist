@@ -94,10 +94,17 @@ async def test_display_name_adds_region_and_country() -> None:
     assert result.display_name == "Athens (Georgia, United States)"
 
 
-@pytest.mark.parametrize("description", [None, "", "Country"])
+@pytest.mark.parametrize("description", [None, "", "Country", "Country in Europe"])
 async def test_display_name_falls_back_to_plain_name(description: str | None) -> None:
     result = SearchResult(name="Greece", geo_type="country", geo_id="2", description=description)
     assert result.display_name == "Greece"
+
+
+async def test_display_name_qualifies_a_region_with_its_country() -> None:
+    result = SearchResult(
+        name="West Greece", geo_type="region", geo_id="3", description="Region in Greece"
+    )
+    assert result.display_name == "West Greece (Greece)"
 
 
 async def test_new_entry_title_and_device_name_carry_the_region() -> None:

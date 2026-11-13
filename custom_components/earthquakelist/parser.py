@@ -69,9 +69,11 @@ class SearchResult:
         """Name qualified with region/country, e.g. "Athens (Attica, Greece)".
 
         The API's `desc` reads like "Place in Ionian Islands, Greece"; the part after
-        " in " names the region/country. Entries without one (e.g. a country) keep the
-        plain name.
+        " in " names the region/country. A country keeps its plain name: its `desc` is
+        "Country in Europe", and a continent tells same-named places apart no better.
         """
+        if self.geo_type == "country":
+            return self.name
         _, sep, qualifier = (self.description or "").partition(" in ")
         qualifier = qualifier.strip()
         return f"{self.name} ({qualifier})" if sep and qualifier else self.name
