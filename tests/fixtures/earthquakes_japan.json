@@ -1,0 +1,104 @@
+{
+  "success": true,
+  "data": [
+    {
+      "eq": {
+        "id": "1358017",
+        "time": "1794582210",
+        "location_depth": "10",
+        "location_offshore": "0",
+        "location_text": "WESTERN HONSHU, JAPAN",
+        "location_nearest_timezone": "Asia/Tokyo",
+        "metric_magnitude": "3.5",
+        "metric_felt": "0",
+        "metric_mmi": "0",
+        "metric_sig": "0",
+        "alert_level": false,
+        "alert_tsunami": "0",
+        "usgs_code": false,
+        "location_lat": "35.2",
+        "location_lng": "132.6",
+        "news_link": false,
+        "news_title": false,
+        "time_utc": "Nov 13, 2026 15:03",
+        "time_nearest_timezone": "Nov 14, 2026 00:03",
+        "time_nearest_timezone_12hr": "Nov 14, 2026 12:03AM",
+        "local_timezone": "Asia/Tokyo",
+        "local_timezone_short": "Tokyo"
+      },
+      "dist": "52",
+      "dir": "SW",
+      "place": {
+        "place": "Matsue",
+        "url": "japan/shimane/matsue/",
+        "place_id": "7267"
+      }
+    },
+    {
+      "eq": {
+        "id": "1357861",
+        "time": "1794534750",
+        "location_depth": "10",
+        "location_offshore": "0",
+        "location_text": "KYUSHU, JAPAN",
+        "location_nearest_timezone": "Asia/Tokyo",
+        "metric_magnitude": "4.0",
+        "metric_felt": "0",
+        "metric_mmi": "0",
+        "metric_sig": "0",
+        "alert_level": false,
+        "alert_tsunami": "0",
+        "usgs_code": false,
+        "location_lat": "32.5",
+        "location_lng": "130.6",
+        "news_link": false,
+        "news_title": false,
+        "time_utc": "Nov 13, 2026 01:52",
+        "time_nearest_timezone": "Nov 13, 2026 10:52",
+        "time_nearest_timezone_12hr": "Nov 13, 2026 10:52AM",
+        "local_timezone": "Asia/Tokyo",
+        "local_timezone_short": "Tokyo"
+      },
+      "dist": "35",
+      "dir": "S",
+      "place": {
+        "place": "Kumamoto",
+        "url": "japan/kumamoto/kumamoto/",
+        "place_id": "5927"
+      }
+    },
+    {
+      "eq": {
+        "id": "1357699",
+        "time": "1794509310",
+        "location_depth": "50",
+        "location_offshore": "1",
+        "location_text": "NEAR EAST COAST OF HONSHU, JAPAN",
+        "location_nearest_timezone": "Asia/Tokyo",
+        "metric_magnitude": "3.6",
+        "metric_felt": "0",
+        "metric_mmi": "0",
+        "metric_sig": "0",
+        "alert_level": false,
+        "alert_tsunami": "0",
+        "usgs_code": false,
+        "location_lat": "36.8",
+        "location_lng": "140.9",
+        "news_link": false,
+        "news_title": false,
+        "time_utc": "Nov 12, 2026 18:48",
+        "time_nearest_timezone": "Nov 13, 2026 03:48",
+        "time_nearest_timezone_12hr": "Nov 13, 2026 03:48AM",
+        "local_timezone": "Asia/Tokyo",
+        "local_timezone_short": "Tokyo"
+      },
+      "dist": "28",
+      "dir": "S",
+      "place": {
+        "place": "Iwaki",
+        "url": "japan/fukushima/iwaki/",
+        "place_id": "566"
+      }
+    }
+  ]
+}

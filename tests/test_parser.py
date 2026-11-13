@@ -158,3 +158,46 @@ def test_parse_earthquake_defaults_offshore_to_false_when_onshore_or_absent() ->
     assert onshore.offshore is False
     assert missing is not None
     assert missing.offshore is False
+
+
+def test_parse_search_results_from_greece_fixture() -> None:
+    """A country, as the API describes it, and the regions of it."""
+    results = parse_search_results(load_fixture("search_greece.json")["data"])
+
+    assert [r.geo_type for r in results] == ["country", "region", "region"]
+    country = results[0]
+    assert country.name == "Greece"
+    assert country.geo_id == "21"
+    assert country.country_code == "GR"
+    assert country.description == "Country in Europe"
+    assert country.population is None
+    assert results[1].display_name == "West Greece (Greece)"
+
+
+def test_parse_earthquakes_from_japan_fixture() -> None:
+    """The quakes of a country carry everything the sensor and the card need.
+
+    The fixture is whatever Japan had when it was recorded, so only its shape is
+    pinned, not its values.
+    """
+    earthquakes = parse_earthquakes(load_fixture("earthquakes_japan.json")["data"])
+
+    assert len(earthquakes) == 3
+    for earthquake in earthquakes:
+        assert earthquake.id
+        assert earthquake.magnitude is not None
+        assert earthquake.time is not None
+        assert earthquake.time.tzinfo is not None
+        assert earthquake.location_text
+        assert earthquake.location_lat is not None
+        assert earthquake.location_lng is not None
+        assert earthquake.place_name
+        assert earthquake.distance_km is not None
+        assert earthquake.direction
+        # The API's `false` for "none" is None, not the string "False".
+        assert earthquake.alert_level in (None, "green", "yellow", "orange", "red")
+        assert isinstance(earthquake.alert_tsunami, bool)
+        assert isinstance(earthquake.offshore, bool)
+    # Latest first.
+    times = [earthquake.time for earthquake in earthquakes]
+    assert times == sorted(times, reverse=True)

@@ -1,0 +1,32 @@
+{
+  "success": true,
+  "data": [
+    {
+      "link_url": "greece/",
+      "name": "Greece",
+      "geo_type": "country",
+      "geo_id": "21",
+      "match": -3,
+      "desc": "Country in Europe",
+      "code": "GR"
+    },
+    {
+      "link_url": "greece/west-greece/",
+      "name": "West Greece",
+      "geo_type": "region",
+      "geo_id": "407",
+      "match": 15,
+      "desc": "Region in Greece",
+      "code": "GR"
+    },
+    {
+      "link_url": "greece/central-greece/",
+      "name": "Central Greece",
+      "geo_type": "region",
+      "geo_id": "412",
+      "match": 18,
+      "desc": "Region in Greece",
+      "code": "GR"
+    }
+  ]
+}
