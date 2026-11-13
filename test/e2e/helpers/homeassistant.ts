@@ -1,13 +1,14 @@
 /**
- * Talks to the Home Assistant the repository's docker-compose already provides.
+ * Talks to the Home Assistant the repository's docker-compose provides.
  *
- * The suite deliberately reuses that instance instead of booting one of its
- * own: it is already onboarded and carries real entities, which is what makes
- * an end-to-end assertion worth more than a mock. Everything the suite writes
- * goes into a dashboard of its own, so the manual playground stays intact.
+ * The suite reuses that instance instead of booting one of its own. On a clean
+ * checkout (no `config/` yet, as in CI) it seeds the minimal configuration and
+ * onboards the instance through the API; an instance that is already onboarded
+ * (the manual playground) is left alone. Everything the suite writes goes into
+ * a dashboard of its own.
  */
 import { execFileSync } from 'node:child_process';
-import { readFileSync, writeFileSync, existsSync } from 'node:fs';
+import { copyFileSync, existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -31,6 +32,13 @@ export const PASSWORD = process.env.HA_E2E_PASSWORD ?? 'password';
 
 /** Brings the repository's own compose environment up if it is not running. */
 export function ensureRunning(): void {
+  // A clean checkout has no config/ - seed the minimal configuration so the
+  // integration's async_setup runs (it registers the card resource).
+  const configuration = resolve(REPO_ROOT, 'config/configuration.yaml');
+  if (!existsSync(configuration)) {
+    mkdirSync(dirname(configuration), { recursive: true });
+    copyFileSync(resolve(E2E_DIR, 'fixtures/configuration.yaml'), configuration);
+  }
   execFileSync('docker', ['compose', 'up', '-d'], { cwd: REPO_ROOT, stdio: 'inherit' });
 }
 
@@ -47,6 +55,62 @@ export async function waitForFrontend(timeoutMs = 180_000): Promise<void> {
     await new Promise((r) => setTimeout(r, 2000));
   }
   throw new Error(`Home Assistant did not answer at ${BASE_URL} within ${timeoutMs}ms`);
+}
+
+/**
+ * Onboards a freshly created instance through the same API the onboarding
+ * wizard uses: creates the admin user, then completes the remaining steps so
+ * the frontend no longer redirects to /onboarding.html. No-op once onboarded.
+ */
+export async function ensureOnboarded(): Promise<void> {
+  const res = await fetch(`${BASE_URL}/api/onboarding`);
+  // The endpoint is gone (404) once onboarding is finished.
+  if (res.status === 404) return;
+  if (!res.ok) throw new Error(`onboarding status failed: ${res.status}`);
+  const steps = (await res.json()) as { step: string; done: boolean }[];
+  if (steps.every((step) => step.done)) return;
+
+  const clientId = `${BASE_URL}/`;
+  const post = async (path: string, body: unknown, token?: string) => {
+    const response = await fetch(`${BASE_URL}${path}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      },
+      body: JSON.stringify(body),
+    });
+    if (!response.ok) throw new Error(`POST ${path} failed: ${response.status} ${await response.text()}`);
+    return (await response.json().catch(() => ({}))) as Record<string, string>;
+  };
+
+  if (!steps.find((step) => step.step === 'user')?.done) {
+    const { auth_code } = await post('/api/onboarding/users', {
+      client_id: clientId,
+      name: 'Admin',
+      username: USERNAME,
+      password: PASSWORD,
+      language: 'en',
+    });
+    const tokenResponse = await fetch(`${BASE_URL}/auth/token`, {
+      method: 'POST',
+      body: new URLSearchParams({
+        grant_type: 'authorization_code',
+        code: auth_code,
+        client_id: clientId,
+      }),
+    });
+    if (!tokenResponse.ok) throw new Error(`token exchange failed: ${tokenResponse.status}`);
+    const { access_token } = (await tokenResponse.json()) as { access_token: string };
+    for (const step of ['core_config', 'analytics']) {
+      await post(`/api/onboarding/${step}`, {}, access_token);
+    }
+    await post(
+      '/api/onboarding/integration',
+      { client_id: clientId, redirect_uri: `${clientId}?auth_callback=1` },
+      access_token,
+    );
+  }
 }
 
 /**

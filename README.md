@@ -199,6 +199,10 @@ To test your changes against a real Home Assistant instance without touching you
 
 When you're done, run `docker compose down` to stop the environment. Your configuration persists in the `config/` folder between runs.
 
+#### End-to-end tests
+
+From a fresh clone, `npm ci && npm run build && npm run test:e2e` is all it takes (Playwright's browser: `npx playwright install chromium`). The suite seeds `config/configuration.yaml`, starts the compose Home Assistant, onboards it (admin / password) if it is new, and runs against it. CI runs the same in `.github/workflows/e2e.yml`.
+
 </details>
 
 ## Contributions

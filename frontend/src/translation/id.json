@@ -28,6 +28,7 @@
     "distance": "Jarak",
     "depth": "Kedalaman",
     "no_data": "Belum ada data gempa bumi",
+    "no_data_filtered": "Tidak ada gempa bumi yang sesuai filter ({filter})",
     "entity_not_found": "Entitas {entity} tidak ditemukan",
     "entity_unavailable": "Sensor tidak tersedia — tidak ada data dari earthquakelist.org",
     "stale_hint": "Data mungkin sudah usang — earthquakelist.org saat ini tidak dapat dijangkau",

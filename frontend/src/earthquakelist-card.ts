@@ -5,6 +5,7 @@ import './components/map';
 import {
   EarthquakeListCardConfig,
   EarthquakeListItem,
+  EarthquakeSensorAttributes,
   HassEntityRegistryDisplayEntry,
   HomeAssistant,
   LovelaceCard,
@@ -162,6 +163,16 @@ export class EarthquakeListCard extends LitElement implements LovelaceCard {
     `;
   }
 
+  /** "No data" text that names the sensor's min-magnitude/max-distance filter when it has one. */
+  private _noDataMessage(attrs: EarthquakeSensorAttributes): string {
+    const parts: string[] = [];
+    if (attrs.min_magnitude !== undefined) parts.push(`M ≥ ${attrs.min_magnitude}`);
+    if (attrs.max_distance !== undefined) parts.push(`≤ ${attrs.max_distance} km`);
+    return parts.length
+      ? localize(this.hass, 'card.no_data_filtered', { filter: parts.join(', ') })
+      : localize(this.hass, 'card.no_data');
+  }
+
   private _renderPlace(place: ResolvedPlace): TemplateResult {
     const stateObj = this.hass.states[place.entityId];
     const name = this._placeName(place.entityId);
@@ -174,7 +185,7 @@ export class EarthquakeListCard extends LitElement implements LovelaceCard {
       : stateObj.state === 'unavailable'
         ? localize(this.hass, 'card.entity_unavailable')
         : earthquakes.length === 0
-          ? localize(this.hass, 'card.no_data')
+          ? this._noDataMessage(stateObj.attributes)
           : undefined;
 
     if (emptyMessage !== undefined) {

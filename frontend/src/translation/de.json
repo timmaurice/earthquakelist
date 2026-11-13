@@ -28,6 +28,7 @@
     "distance": "Entfernung",
     "depth": "Tiefe",
     "no_data": "Noch keine Erdbebendaten",
+    "no_data_filtered": "Keine Erdbeben entsprechen dem Filter ({filter})",
     "entity_not_found": "Entität {entity} nicht gefunden",
     "entity_unavailable": "Sensor nicht verfügbar — keine Daten von earthquakelist.org",
     "stale_hint": "Daten könnten veraltet sein — earthquakelist.org ist derzeit nicht erreichbar",

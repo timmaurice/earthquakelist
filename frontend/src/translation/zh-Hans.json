@@ -28,6 +28,7 @@
     "distance": "距离",
     "depth": "深度",
     "no_data": "暂无地震数据",
+    "no_data_filtered": "没有符合筛选条件的地震({filter})",
     "entity_not_found": "未找到实体 {entity}",
     "entity_unavailable": "传感器不可用 — 无法从 earthquakelist.org 获取数据",
     "stale_hint": "数据可能已过时 — 目前无法连接 earthquakelist.org",
