@@ -17,6 +17,7 @@ from homeassistant.util import slugify
 
 from .const import (
     BASE_URL,
+    CONF_DISPLAY_NAME,
     CONF_MAX_DISTANCE,
     CONF_MIN_MAGNITUDE,
     CONF_PLACE,
@@ -96,6 +97,8 @@ class EarthquakeListSensor(CoordinatorEntity[EarthquakeListCoordinator], SensorE
     """Representation of the latest matching earthquake for a monitored location."""
 
     _attr_has_entity_name = True
+    # The match list repeats on every poll; keep it out of the recorder database.
+    _unrecorded_attributes = frozenset({"earthquakes"})
 
     def __init__(
         self,
@@ -108,6 +111,8 @@ class EarthquakeListSensor(CoordinatorEntity[EarthquakeListCoordinator], SensorE
         self.entity_description = description
         self._entry = entry
         self._place_name = entry.data.get(CONF_PLACE, "Unknown")
+        # Entries created before display_name existed fall back to the bare place name.
+        self._device_name = entry.data.get(CONF_DISPLAY_NAME) or self._place_name
 
         place_slug = slugify(self._place_name)
         self._attr_unique_id = f"{DOMAIN}_{entry.entry_id}_{description.key}"
@@ -137,8 +142,18 @@ class EarthquakeListSensor(CoordinatorEntity[EarthquakeListCoordinator], SensorE
     def extra_state_attributes(self) -> dict[str, object] | None:
         """Return the state attributes."""
         earthquakes = self.coordinator.data
+        # Also reported when nothing matches, so the card can name the filter.
+        filter_attrs = {
+            "monitored_place": self._place_name,
+            "min_magnitude": self._entry.options.get(
+                CONF_MIN_MAGNITUDE, self._entry.data.get(CONF_MIN_MAGNITUDE)
+            ),
+            "max_distance": self._entry.options.get(
+                CONF_MAX_DISTANCE, self._entry.data.get(CONF_MAX_DISTANCE)
+            ),
+        }
         if not earthquakes:
-            return None
+            return {k: v for k, v in filter_attrs.items() if v is not None}
 
         earthquake = earthquakes[0]
         attrs = {
@@ -161,13 +176,7 @@ class EarthquakeListSensor(CoordinatorEntity[EarthquakeListCoordinator], SensorE
             "offshore": earthquake.offshore,
             "local_timezone": earthquake.local_timezone,
             "local_timezone_short": earthquake.local_timezone_short,
-            "monitored_place": self._place_name,
-            "min_magnitude": self._entry.options.get(
-                CONF_MIN_MAGNITUDE, self._entry.data.get(CONF_MIN_MAGNITUDE)
-            ),
-            "max_distance": self._entry.options.get(
-                CONF_MAX_DISTANCE, self._entry.data.get(CONF_MAX_DISTANCE)
-            ),
+            **filter_attrs,
             "earthquakes": [_earthquake_to_dict(eq) for eq in earthquakes],
         }
         if not self.coordinator.last_update_success:
@@ -179,7 +188,7 @@ class EarthquakeListSensor(CoordinatorEntity[EarthquakeListCoordinator], SensorE
         """Return device information."""
         return {
             "identifiers": {(DOMAIN, self._entry.entry_id)},
-            "name": self._place_name,
+            "name": self._device_name,
             "manufacturer": "Earthquake List",
             "model": "Earthquake Monitor",
             "configuration_url": BASE_URL,

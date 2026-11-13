@@ -28,6 +28,7 @@
     "distance": "距離",
     "depth": "深さ",
     "no_data": "地震データがまだありません",
+    "no_data_filtered": "フィルター({filter})に一致する地震はありません",
     "entity_not_found": "エンティティ {entity} が見つかりません",
     "entity_unavailable": "センサーが利用できません — earthquakelist.org からデータを取得できませんでした",
     "no_places_configured": "カードエディターで地域を1つ以上選択してください。",

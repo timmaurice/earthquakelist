@@ -72,3 +72,16 @@ export function magnitudeSeverity(magnitude: number | undefined): 'minor' | 'lig
 export function isSafeUrl(url: string | undefined | null): url is string {
   return typeof url === 'string' && /^https?:\/\//i.test(url);
 }
+
+/**
+ * Longitudes to use when fitting a map to a set of points.
+ *
+ * Points on both sides of the antimeridian (e.g. +178 and -178 near Fiji) would otherwise span
+ * the whole world. When the raw span exceeds 180 degrees, negative longitudes are shifted by
+ * 360 so the points form a compact range across the date line (MapLibre accepts lng > 180).
+ */
+export function fitLongitudes(longitudes: number[]): number[] {
+  if (longitudes.length === 0) return [];
+  const span = Math.max(...longitudes) - Math.min(...longitudes);
+  return span > 180 ? longitudes.map((lng) => (lng < 0 ? lng + 360 : lng)) : longitudes;
+}

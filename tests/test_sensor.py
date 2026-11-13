@@ -4,7 +4,7 @@ from datetime import UTC, datetime
 from importlib import import_module
 import json
 from pathlib import Path
-from unittest.mock import AsyncMock, patch
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 from pytest_homeassistant_custom_component.common import MockConfigEntry
@@ -170,6 +170,72 @@ async def test_the_sensor_leaves_its_icon_to_icons_json(
 
     icons = await async_get_icons(hass, "entity", integrations=[DOMAIN])
     assert icons[DOMAIN]["sensor"]["latest_earthquake"] == {"default": "mdi:pulse"}
+
+
+async def test_empty_result_still_reports_the_filter(
+    hass, enable_custom_integrations
+) -> None:
+    """Without a match the sensor keeps min_magnitude/max_distance for the card."""
+    entry = MockConfigEntry(
+        domain=DOMAIN,
+        title="Corfu Earthquakes",
+        unique_id="place_2042",
+        data={
+            "geo_type": "place",
+            "geo_id": "2042",
+            "place": "Corfu",
+            "min_magnitude": 3.0,
+            "max_distance": 50,
+        },
+    )
+    entry.add_to_hass(hass)
+
+    with (
+        patch("custom_components.earthquakelist.async_setup", return_value=True),
+        patch("homeassistant.setup.async_process_deps_reqs"),
+        patch(
+            "custom_components.earthquakelist.EarthquakeListAPI.get_earthquakes",
+            AsyncMock(return_value=[]),
+        ),
+    ):
+        assert await hass.config_entries.async_setup(entry.entry_id)
+        await hass.async_block_till_done()
+
+    state = hass.states.get("sensor.earthquakelist_corfu_latest_earthquake")
+    assert state is not None
+    assert state.attributes["min_magnitude"] == 3.0
+    assert state.attributes["max_distance"] == 50
+    assert state.attributes["monitored_place"] == "Corfu"
+    assert "earthquakes" not in state.attributes
+
+
+@pytest.mark.parametrize(
+    ("extra", "expected"),
+    [
+        ({"display_name": "Corfu (Ionian Islands, Greece)"}, "Corfu (Ionian Islands, Greece)"),
+        ({}, "Corfu"),  # entries created before display_name existed stay unchanged
+    ],
+)
+def test_device_name_uses_display_name_only_when_stored(extra, expected) -> None:
+    from custom_components.earthquakelist.sensor import (
+        SENSOR_DESCRIPTION,
+        EarthquakeListSensor,
+    )
+
+    entry = MockConfigEntry(
+        domain=DOMAIN,
+        title="x",
+        data={"geo_type": "place", "geo_id": "2042", "place": "Corfu", **extra},
+    )
+    sensor = EarthquakeListSensor(MagicMock(), entry, SENSOR_DESCRIPTION)
+    assert sensor.device_info["name"] == expected
+
+
+def test_earthquake_list_is_not_recorded() -> None:
+    """The bulky `earthquakes` list is excluded from the recorder."""
+    from custom_components.earthquakelist.sensor import EarthquakeListSensor
+
+    assert "earthquakes" in EarthquakeListSensor._unrecorded_attributes
 
 
 async def test_a_failed_poll_keeps_the_last_earthquakes_and_marks_them_stale(
