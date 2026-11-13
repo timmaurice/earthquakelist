@@ -32,7 +32,9 @@ blueprint:
           mode: box
     tsunami_only:
       name: Tsunami/Alert Only
-      description: Only notify when the earthquake carries a tsunami or impact alert flag.
+      description: >-
+        Only notify when the earthquake carries a tsunami flag or a yellow,
+        orange or red USGS impact level.
       default: false
       selector:
         boolean:
@@ -55,9 +57,13 @@ variables:
   magnitude: '{{ trigger.to_state.state if trigger is defined else none }}'
   distance: '{{ trigger.to_state.attributes.distance_km if trigger is defined else none }}'
   direction: '{{ trigger.to_state.attributes.direction if trigger is defined else none }}'
+  # alert_level is absent for most quakes and "green" (no significant impact)
+  # for many others, so only the higher USGS impact levels count as an alert.
   is_tsunami: >-
-    {{ trigger is defined and (trigger.to_state.attributes.alert_tsunami
-    or trigger.to_state.attributes.alert_level not in [none, false]) }}
+    {{ trigger is defined and (
+    trigger.to_state.attributes.alert_tsunami | default(false) | bool(false)
+    or (trigger.to_state.attributes.alert_level | default('', true) | string | lower)
+    in ['yellow', 'orange', 'red']) }}
   title: "{{ 'Tsunami Alert' if is_tsunami else 'New Earthquake' }} - M{{ magnitude }} near {{ place }}"
   message: >-
     {{ 'Magnitude ' ~ magnitude ~ ' earthquake near ' ~ place
@@ -74,8 +80,6 @@ condition:
   - condition: template
     value_template: '{{ trigger.to_state.state | float(0) >= min_magnitude }}'
   - condition: template
-    value_template: >-
-      {{ not tsunami_only or trigger.to_state.attributes.alert_tsunami
-      or trigger.to_state.attributes.alert_level not in [none, false] }}
+    value_template: '{{ not tsunami_only or is_tsunami }}'
 
 action: !input notify_action

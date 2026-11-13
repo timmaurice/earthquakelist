@@ -116,6 +116,67 @@ async def test_get_earthquakes_passes_limit_and_returns_empty_when_no_match(
     assert kwargs["params"]["limit"] == "5"
 
 
+def _quakes_payload(*magnitudes: str) -> dict:
+    """Build an `action=earthquakes` payload, one quake per magnitude, latest first."""
+    return {
+        "success": True,
+        "data": [
+            {"eq": {"id": str(index), "metric_magnitude": magnitude}}
+            for index, magnitude in enumerate(magnitudes, start=1)
+        ],
+    }
+
+
+async def test_get_earthquakes_applies_a_fractional_min_magnitude(mock_hass) -> None:
+    """The API truncates min_magnitude to an integer, so 3.5 used to behave like 3.
+
+    Verified against the live API: min_magnitude=3.5 and 3.9 both return M3.0
+    quakes. The fractional part is now applied after parsing.
+    """
+    api = EarthquakeListAPI(mock_hass)
+
+    with _patch_session(_quakes_payload("3.2", "3.5", "4.1", "3.0")) as (
+        mock_session,
+        _,
+    ):
+        earthquakes = await api.get_earthquakes("place", "2042", 3.5, 50)
+
+    assert [earthquake.magnitude for earthquake in earthquakes] == [3.5, 4.1]
+    _, kwargs = mock_session.get.call_args
+    assert kwargs["params"]["min_magnitude"] == 3
+
+
+async def test_a_fractional_min_magnitude_still_fills_the_requested_count(
+    mock_hass,
+) -> None:
+    """Over-fetch upstream, then trim, so dropping small quakes leaves no short list."""
+    api = EarthquakeListAPI(mock_hass)
+    magnitudes = ["3.1", "3.6"] * 25
+
+    with _patch_session(_quakes_payload(*magnitudes)) as (mock_session, _):
+        earthquakes = await api.get_earthquakes("place", "2042", 3.5, 50, limit=10)
+
+    assert len(earthquakes) == 10
+    assert all(earthquake.magnitude >= 3.5 for earthquake in earthquakes)
+    # Latest first is preserved: ids of the M3.6 quakes, in API order.
+    assert [earthquake.id for earthquake in earthquakes][:3] == ["2", "4", "6"]
+    _, kwargs = mock_session.get.call_args
+    assert kwargs["params"]["limit"] == "50"
+
+
+async def test_an_integer_min_magnitude_is_sent_unchanged(mock_hass) -> None:
+    """A whole-number filter is applied upstream as before, with the normal limit."""
+    api = EarthquakeListAPI(mock_hass)
+
+    with _patch_session(_quakes_payload("4.0", "4.2")) as (mock_session, _):
+        earthquakes = await api.get_earthquakes("place", "2042", 4.0, 50, limit=10)
+
+    assert len(earthquakes) == 2
+    _, kwargs = mock_session.get.call_args
+    assert kwargs["params"]["min_magnitude"] == 4
+    assert kwargs["params"]["limit"] == "10"
+
+
 async def test_get_earthquakes_raises_on_client_error(mock_hass) -> None:
     """A communication failure should raise EarthquakeListApiError."""
     import aiohttp
