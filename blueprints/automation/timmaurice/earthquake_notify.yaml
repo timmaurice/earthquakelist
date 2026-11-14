@@ -53,21 +53,31 @@ max_exceeded: silent
 variables:
   min_magnitude: !input min_magnitude
   tsunami_only: !input tsunami_only
-  place: '{{ trigger.to_state.attributes.place or trigger.to_state.attributes.location or trigger.to_state.name if trigger is defined else none }}'
-  magnitude: '{{ trigger.to_state.state if trigger is defined else none }}'
-  distance: '{{ trigger.to_state.attributes.distance_km if trigger is defined else none }}'
-  direction: '{{ trigger.to_state.attributes.direction if trigger is defined else none }}'
+  # The variables render before the conditions, and the trigger also fires when
+  # the sensor goes unavailable (the `time` attribute disappears), so every
+  # lookup must survive a missing attribute (or a missing to_state).
+  place: >-
+    {{ (trigger.to_state.attributes.get('place') or trigger.to_state.attributes.get('location')
+    or trigger.to_state.name) if trigger is defined and trigger.to_state is not none else none }}
+  magnitude: '{{ trigger.to_state.state if trigger is defined and trigger.to_state is not none else none }}'
+  distance: >-
+    {{ trigger.to_state.attributes.get('distance_km')
+    if trigger is defined and trigger.to_state is not none else none }}
+  direction: >-
+    {{ trigger.to_state.attributes.get('direction')
+    if trigger is defined and trigger.to_state is not none else none }}
   # alert_level is absent for most quakes and "green" (no significant impact)
   # for many others, so only the higher USGS impact levels count as an alert.
   is_tsunami: >-
-    {{ trigger is defined and (
+    {{ trigger is defined and trigger.to_state is not none and (
     trigger.to_state.attributes.alert_tsunami | default(false) | bool(false)
     or (trigger.to_state.attributes.alert_level | default('', true) | string | lower)
     in ['yellow', 'orange', 'red']) }}
   title: "{{ 'Tsunami Alert' if is_tsunami else 'New Earthquake' }} - M{{ magnitude }} near {{ place }}"
   message: >-
     {{ 'Magnitude ' ~ magnitude ~ ' earthquake near ' ~ place
-    ~ (' (' ~ distance | round(0) | int ~ ' km ' ~ direction ~ ')' if distance is not none else '') ~ '.' }}
+    ~ (' (' ~ distance | float(0) | round(0) | int ~ ' km ' ~ direction | default('', true) ~ ')'
+    if distance is number or (distance is string and distance | float(none) is not none) else '') ~ '.' }}
 
 trigger:
   - trigger: state
