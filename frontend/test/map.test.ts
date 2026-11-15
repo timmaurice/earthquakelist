@@ -186,6 +186,27 @@ describe('EarthquakeListMap', () => {
     expect(markers.has('quake-1')).toBe(true);
   });
 
+  it('ignores a new array with the same earthquakes, as the card passes on every hass push', async () => {
+    const el = new EarthquakeListMap();
+    el.hass = makeHass();
+    el.earthquakes = [makeQuake()];
+    document.body.appendChild(el);
+    await waitForMap(el);
+    mapInstanceMock.fitBounds.mockClear();
+    mapInstanceMock.jumpTo.mockClear();
+
+    // The card hands over `earthquakes.slice(...)`, a new array each render. Each one used to
+    // re-fit the map and block taps on it for 150 ms.
+    for (let i = 0; i < 5; i++) {
+      el.earthquakes = [makeQuake()];
+      await el.updateComplete;
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    }
+
+    expect(mapInstanceMock.fitBounds).not.toHaveBeenCalled();
+    expect(mapInstanceMock.jumpTo).not.toHaveBeenCalled();
+  });
+
   it('stops auto-fitting bounds once the user has manually interacted with the map', async () => {
     const el = new EarthquakeListMap();
     el.hass = makeHass();

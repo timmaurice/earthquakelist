@@ -173,6 +173,19 @@ export class EarthquakeListCard extends LitElement implements LovelaceCard {
       : localize(this.hass, 'card.no_data');
   }
 
+  /** Clock icon for data the sensor kept from its last good poll, empty results included. */
+  private _renderStaleIndicator(attrs: EarthquakeSensorAttributes): TemplateResult | typeof nothing {
+    return attrs.stale === true
+      ? html`<ha-icon
+          class="stale-indicator"
+          icon="mdi:clock-alert-outline"
+          role="img"
+          aria-label=${localize(this.hass, 'card.stale_hint')}
+          title=${localize(this.hass, 'card.stale_hint')}
+        ></ha-icon>`
+      : nothing;
+  }
+
   private _renderPlace(place: ResolvedPlace): TemplateResult {
     const stateObj = this.hass.states[place.entityId];
     const name = this._placeName(place.entityId);
@@ -192,7 +205,10 @@ export class EarthquakeListCard extends LitElement implements LovelaceCard {
       return html`
         <div class="place-row">
           <div class="place-header">
-            <span class="place-name">${name}</span>
+            <span class="place-name-group">
+              <span class="place-name">${name}</span>
+              ${stateObj ? this._renderStaleIndicator(stateObj.attributes) : nothing}
+            </span>
           </div>
           <div class="empty-state ${!stateObj ? 'error' : ''}">${emptyMessage}</div>
         </div>
@@ -220,17 +236,7 @@ export class EarthquakeListCard extends LitElement implements LovelaceCard {
               @click=${() => this._showMoreInfo(place.entityId)}
               @keydown=${(e: KeyboardEvent) => this._handleEntityLinkKeydown(e, place.entityId)}
             ></ha-icon>
-            ${
-              stateObj.attributes.stale === true
-                ? html`<ha-icon
-                    class="stale-indicator"
-                    icon="mdi:clock-alert-outline"
-                    role="img"
-                    aria-label=${localize(this.hass, 'card.stale_hint')}
-                    title=${localize(this.hass, 'card.stale_hint')}
-                  ></ha-icon>`
-                : nothing
-            }
+            ${this._renderStaleIndicator(stateObj.attributes)}
           </span>
           <span class="place-time">${timeAgo}</span>
         </div>

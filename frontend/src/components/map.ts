@@ -107,7 +107,9 @@ class MapToolsControl implements IControl {
 
 export class EarthquakeListMap extends LitElement {
   @property({ attribute: false }) public hass!: HomeAssistant;
-  @property({ attribute: false }) public earthquakes: EarthquakeListItem[] = [];
+  // The card passes a fresh slice on every hass push; only a real data change may re-fit the map.
+  @property({ attribute: false, hasChanged: (a, b) => JSON.stringify(a) !== JSON.stringify(b) })
+  public earthquakes: EarthquakeListItem[] = [];
   @property({ attribute: false }) public tileSource: MapTileSource = 'auto';
   @property({ attribute: false }) public themeMode: MapThemeMode = 'auto';
   /** Where the lock starts; the toggle button owns it from there until the config changes. */
