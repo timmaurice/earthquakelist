@@ -37,10 +37,19 @@ const ue={attribute:!0,type:String,converter:x,reflect:!1,hasChanged:b},he=(e=ue
           ${0===e.length?q`<div class="empty-state">${we(this.hass,"card.no_places_configured")}</div>`:e.map(e=>this._renderPlace(e))}
         </div>
       </ha-card>
-    `}_noDataMessage(e){const t=[];return void 0!==e.min_magnitude&&t.push(`M ≥ ${e.min_magnitude}`),void 0!==e.max_distance&&t.push(`≤ ${e.max_distance} km`),t.length?we(this.hass,"card.no_data_filtered",{filter:t.join(", ")}):we(this.hass,"card.no_data")}_renderPlace(e){const t=this.hass.states[e.entityId],r=this._placeName(e.entityId),i=this._earthquakesFor(e.entityId),n=t?"unavailable"===t.state?we(this.hass,"card.entity_unavailable"):0===i.length?this._noDataMessage(t.attributes):void 0:we(this.hass,"card.entity_not_found",{entity:e.entityId});if(void 0!==n)return q`
+    `}_noDataMessage(e){const t=[];return void 0!==e.min_magnitude&&t.push(`M ≥ ${e.min_magnitude}`),void 0!==e.max_distance&&t.push(`≤ ${e.max_distance} km`),t.length?we(this.hass,"card.no_data_filtered",{filter:t.join(", ")}):we(this.hass,"card.no_data")}_renderStaleIndicator(e){return!0===e.stale?q`<ha-icon
+          class="stale-indicator"
+          icon="mdi:clock-alert-outline"
+          role="img"
+          aria-label=${we(this.hass,"card.stale_hint")}
+          title=${we(this.hass,"card.stale_hint")}
+        ></ha-icon>`:Z}_renderPlace(e){const t=this.hass.states[e.entityId],r=this._placeName(e.entityId),i=this._earthquakesFor(e.entityId),n=t?"unavailable"===t.state?we(this.hass,"card.entity_unavailable"):0===i.length?this._noDataMessage(t.attributes):void 0:we(this.hass,"card.entity_not_found",{entity:e.entityId});if(void 0!==n)return q`
         <div class="place-row">
           <div class="place-header">
-            <span class="place-name">${r}</span>
+            <span class="place-name-group">
+              <span class="place-name">${r}</span>
+              ${t?this._renderStaleIndicator(t.attributes):Z}
+            </span>
           </div>
           <div class="empty-state ${t?"":"error"}">${n}</div>
         </div>
@@ -59,13 +68,7 @@ const ue={attribute:!0,type:String,converter:x,reflect:!1,hasChanged:b},he=(e=ue
               @click=${()=>this._showMoreInfo(e.entityId)}
               @keydown=${t=>this._handleEntityLinkKeydown(t,e.entityId)}
             ></ha-icon>
-            ${!0===t.attributes.stale?q`<ha-icon
-                    class="stale-indicator"
-                    icon="mdi:clock-alert-outline"
-                    role="img"
-                    aria-label=${we(this.hass,"card.stale_hint")}
-                    title=${we(this.hass,"card.stale_hint")}
-                  ></ha-icon>`:Z}
+            ${this._renderStaleIndicator(t.attributes)}
           </span>
           <span class="place-time">${s}</span>
         </div>

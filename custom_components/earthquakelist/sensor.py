@@ -142,7 +142,8 @@ class EarthquakeListSensor(CoordinatorEntity[EarthquakeListCoordinator], SensorE
     def extra_state_attributes(self) -> dict[str, object] | None:
         """Return the state attributes."""
         earthquakes = self.coordinator.data
-        # Also reported when nothing matches, so the card can name the filter.
+        # Also reported when nothing matches, so the card can name the filter and
+        # flag an empty result that is only the last good one.
         filter_attrs = {
             "monitored_place": self._place_name,
             "min_magnitude": self._entry.options.get(
@@ -151,6 +152,7 @@ class EarthquakeListSensor(CoordinatorEntity[EarthquakeListCoordinator], SensorE
             "max_distance": self._entry.options.get(
                 CONF_MAX_DISTANCE, self._entry.data.get(CONF_MAX_DISTANCE)
             ),
+            "stale": None if self.coordinator.last_update_success else True,
         }
         if not earthquakes:
             return {k: v for k, v in filter_attrs.items() if v is not None}
@@ -179,8 +181,6 @@ class EarthquakeListSensor(CoordinatorEntity[EarthquakeListCoordinator], SensorE
             **filter_attrs,
             "earthquakes": [_earthquake_to_dict(eq) for eq in earthquakes],
         }
-        if not self.coordinator.last_update_success:
-            attrs["stale"] = True
         return {key: value for key, value in attrs.items() if value is not None}
 
     @property

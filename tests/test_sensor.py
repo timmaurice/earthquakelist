@@ -285,3 +285,48 @@ async def test_a_failed_poll_keeps_the_last_earthquakes_and_marks_them_stale(
     assert state.state == "5.6"
     assert state.attributes["stale"] is True
     assert len(state.attributes["earthquakes"]) == 1
+
+
+async def test_a_failed_poll_after_an_empty_result_is_marked_stale(
+    hass, enable_custom_integrations
+) -> None:
+    """A quiet place with a dead API must not keep saying "no earthquakes".
+
+    The empty-result branch used to return before `stale` was set.
+    """
+    from custom_components.earthquakelist.api import EarthquakeListApiError
+
+    entry = MockConfigEntry(
+        domain=DOMAIN,
+        title="Corfu Earthquakes",
+        unique_id="place_2042",
+        data={
+            "geo_type": "place",
+            "geo_id": "2042",
+            "place": "Corfu",
+            "min_magnitude": 3.0,
+            "max_distance": 50,
+        },
+    )
+    entry.add_to_hass(hass)
+    get = AsyncMock(return_value=[])
+
+    with (
+        patch("custom_components.earthquakelist.async_setup", return_value=True),
+        patch("homeassistant.setup.async_process_deps_reqs"),
+        patch("custom_components.earthquakelist.EarthquakeListAPI.get_earthquakes", get),
+    ):
+        assert await hass.config_entries.async_setup(entry.entry_id)
+        await hass.async_block_till_done()
+
+        entity_id = "sensor.earthquakelist_corfu_latest_earthquake"
+        assert "stale" not in hass.states.get(entity_id).attributes
+
+        get.side_effect = EarthquakeListApiError("boom")
+        await entry.runtime_data.async_refresh()
+        await hass.async_block_till_done()
+
+    state = hass.states.get(entity_id)
+    assert state.state == "unknown"
+    assert state.attributes["stale"] is True
+    assert state.attributes["min_magnitude"] == 3.0

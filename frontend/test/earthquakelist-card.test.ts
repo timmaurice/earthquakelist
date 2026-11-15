@@ -515,14 +515,14 @@ describe('EarthquakeListCard', () => {
   });
 
   describe('stale hint', () => {
-    async function renderStale(attributes: Record<string, unknown>) {
+    async function renderStale(attributes: Record<string, unknown>, state = '4.5') {
       const entityId = 'sensor.earthquakelist_corfu_latest_earthquake';
       const card = new EarthquakeListCard();
       card.hass = makeHass({
         states: {
           [entityId]: {
             entity_id: entityId,
-            state: '4.5',
+            state,
             last_changed: '',
             last_updated: '',
             attributes: { monitored_place: 'Corfu', earthquakes: [{ magnitude: 4.5, place: 'Corfu' }], ...attributes },
@@ -544,6 +544,13 @@ describe('EarthquakeListCard', () => {
     it('shows nothing when stale is false or absent', async () => {
       expect(await renderStale({ stale: false })).toBeNull();
       expect(await renderStale({})).toBeNull();
+    });
+
+    // A quiet place whose API is down kept saying "No earthquakes" with no sign the data was old.
+    it('also shows the hint next to the empty state of a stale, empty result', async () => {
+      const el = await renderStale({ stale: true, earthquakes: [], min_magnitude: 3 }, 'unknown');
+      expect(el?.getAttribute('title')).toContain('outdated');
+      expect(el?.closest('.place-row')?.querySelector('.empty-state')?.textContent).toContain('M ≥ 3');
     });
   });
 
