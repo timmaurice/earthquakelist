@@ -68,17 +68,11 @@ async def test_is_tsunami_only_flags_real_alerts(
     """
     variables = _blueprint()["variables"]
 
-    is_tsunami = _render(
-        hass, variables["is_tsunami"], {"trigger": _trigger(attributes)}
-    )
+    scope = {"trigger": _trigger(attributes)}
+    scope["tsunami"] = _render(hass, variables["tsunami"], scope)
+    is_tsunami = _render(hass, variables["is_tsunami"], scope)
 
     assert is_tsunami is expected
-    title = _render(
-        hass,
-        variables["title"],
-        {"is_tsunami": is_tsunami, "magnitude": "3.6", "place": "Corfu"},
-    )
-    assert title.startswith("Tsunami Alert" if expected else "New Earthquake")
 
 
 @pytest.mark.parametrize(
@@ -179,3 +173,33 @@ async def test_message_includes_distance_when_known(hass: HomeAssistant) -> None
             scope[name] = _render(hass, template, dict(scope))
 
     assert scope["message"] == "Magnitude 3.6 earthquake near Corfu (12 km NW)."
+
+
+@pytest.mark.parametrize(
+    ("attributes", "expected"),
+    [
+        ({"alert_tsunami": False}, "New Earthquake"),
+        ({"alert_tsunami": False, "alert_level": "green"}, "New Earthquake"),
+        # USGS PAGER estimates damage and casualties; it says nothing about a tsunami.
+        ({"alert_tsunami": False, "alert_level": "yellow"}, "Earthquake Alert"),
+        ({"alert_tsunami": False, "alert_level": "orange"}, "Earthquake Alert"),
+        ({"alert_tsunami": False, "alert_level": "red"}, "Earthquake Alert"),
+        ({"alert_tsunami": True}, "Tsunami Alert"),
+        ({"alert_tsunami": True, "alert_level": "orange"}, "Tsunami Alert"),
+    ],
+)
+async def test_title_says_tsunami_only_for_a_tsunami_flag(
+    hass: HomeAssistant, attributes: dict, expected: str
+) -> None:
+    """An orange PAGER alert for an inland quake used to read "Tsunami Alert"."""
+    variables = _blueprint()["variables"]
+    scope = {
+        "trigger": _trigger(attributes),
+        "min_magnitude": 0,
+        "tsunami_only": False,
+    }
+    for name, template in variables.items():
+        if isinstance(template, str) and "{{" in template:
+            scope[name] = _render(hass, template, dict(scope))
+
+    assert scope["title"] == f"{expected} - M3.6 near Corfu"

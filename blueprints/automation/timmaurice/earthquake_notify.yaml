@@ -66,14 +66,19 @@ variables:
   direction: >-
     {{ trigger.to_state.attributes.get('direction')
     if trigger is defined and trigger.to_state is not none else none }}
+  tsunami: >-
+    {{ trigger is defined and trigger.to_state is not none
+    and trigger.to_state.attributes.alert_tsunami | default(false) | bool(false) }}
   # alert_level is absent for most quakes and "green" (no significant impact)
   # for many others, so only the higher USGS impact levels count as an alert.
+  # It is a damage estimate (USGS PAGER), so it never makes the title say tsunami.
   is_tsunami: >-
-    {{ trigger is defined and trigger.to_state is not none and (
-    trigger.to_state.attributes.alert_tsunami | default(false) | bool(false)
-    or (trigger.to_state.attributes.alert_level | default('', true) | string | lower)
+    {{ tsunami or (trigger is defined and trigger.to_state is not none
+    and (trigger.to_state.attributes.alert_level | default('', true) | string | lower)
     in ['yellow', 'orange', 'red']) }}
-  title: "{{ 'Tsunami Alert' if is_tsunami else 'New Earthquake' }} - M{{ magnitude }} near {{ place }}"
+  title: >-
+    {{ 'Tsunami Alert' if tsunami else ('Earthquake Alert' if is_tsunami else 'New Earthquake') }}
+    - M{{ magnitude }} near {{ place }}
   message: >-
     {{ 'Magnitude ' ~ magnitude ~ ' earthquake near ' ~ place
     ~ (' (' ~ distance | float(0) | round(0) | int ~ ' km ' ~ direction | default('', true) ~ ')'
